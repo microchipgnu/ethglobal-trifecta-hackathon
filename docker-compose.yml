@@ -19,13 +19,15 @@ services:
 
   streamer:
     build:
-      context: ./apps/streamer
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./apps/streamer/Dockerfile
     shm_size: 2g
     container_name: tradestream-streamer
     restart: always
+    env_file: .env
     networks:
       - dokploy-network
+
 networks:
   dokploy-network:
     external: true

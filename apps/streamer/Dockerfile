@@ -31,7 +31,7 @@ RUN mkdir -p /tmp/runtime-root && \
 WORKDIR /app
 
 # Copy your streaming script
-COPY stream.sh /app/stream.sh
+COPY apps/streamer/stream.sh /app/stream.sh
 RUN chmod +x /app/stream.sh
 
 # Entry point

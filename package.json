@@ -21,6 +21,7 @@
     "format:fix": "biome format --write .",
     "format:check": "biome format .",
     "start": "turbo run start",
+    "docker:build": "docker compose build --no-cache",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down --remove-orphans"
   }
