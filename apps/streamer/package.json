@@ -1,0 +1,17 @@
+{
+  "name": "@tradestream/streamer",
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "build": "echo 'Nothing to build'",
+    "dev": "echo 'Run with docker-compose'",
+    "start": "echo 'Run with docker-compose'",
+    "start:detached": "echo 'Run with docker-compose'",
+    "stop": "echo 'Run with docker-compose'",
+    "lint": "biome check .",
+    "format": "biome format --write ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4"
+  }
+} 
