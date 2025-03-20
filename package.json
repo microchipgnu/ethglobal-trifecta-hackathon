@@ -1,0 +1,25 @@
+{
+  "name": "tradestream",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "packageManager": "bun@1.2.1",
+  "workspaces": ["packages/*", "apps/*"],
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@types/bun": "latest",
+    "turbo": "^2.4.4"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint && biome check .",
+    "format": "turbo run format && biome format --write .",
+    "format:fix": "biome format --write .",
+    "format:check": "biome format .",
+    "start": "turbo run start"
+  }
+}

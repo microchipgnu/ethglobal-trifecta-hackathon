@@ -1,0 +1,38 @@
+# Environment variables
+.env
+
+# Logs
+*.log
+
+# Docker data
+.docker/
+
+# Node.js dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db 
+
+# Bun
+.bun/
+
+.turbo/
+
+output.txt
+node_modules
+dist
+.mastra
+.env.development
+.env
+*.db
