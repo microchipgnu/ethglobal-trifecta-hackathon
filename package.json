@@ -20,6 +20,8 @@
     "format": "turbo run format && biome format --write .",
     "format:fix": "biome format --write .",
     "format:check": "biome format .",
-    "start": "turbo run start"
+    "start": "turbo run start",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down"
   }
 }

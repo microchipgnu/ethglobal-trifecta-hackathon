@@ -1,0 +1,22 @@
+services:
+  internal-app:
+    build:
+      context: .
+      dockerfile: ./apps/internal-app/Dockerfile
+    container_name: tradestream-internal-app
+    env_file: .env
+    ports:
+      - "${INTERNAL_APP_PORT:-5173}:5173"
+    restart: always
+    networks:
+      - dokploy-network
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.internal-app.rule=Host(`internal-tradestream.${DOMAIN:-localhost}`)
+      - traefik.http.routers.internal-app.entrypoints=websecure
+      - traefik.http.routers.internal-app.tls.certResolver=letsencrypt
+      - traefik.http.services.internal-app.loadbalancer.server.port=${INTERNAL_APP_PORT:-5173}
+
+networks:
+  dokploy-network:
+    external: true
