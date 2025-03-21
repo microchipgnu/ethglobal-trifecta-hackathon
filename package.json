@@ -22,7 +22,21 @@
     "format:check": "biome format .",
     "start": "turbo run start",
     "docker:build": "docker compose build --no-cache",
+    "docker:build:app": "docker compose build internal-app",
+    "docker:build:agent": "docker compose build agent",
+    "docker:build:streamer": "docker compose build streamer",
+    "docker:build:rtmp": "docker compose build rtmp-server",
     "docker:up": "docker compose up -d",
-    "docker:down": "docker compose down --remove-orphans"
+    "docker:up:app": "docker compose up -d internal-app",
+    "docker:up:agent": "docker compose up -d agent",
+    "docker:up:streamer": "docker compose up -d streamer", 
+    "docker:up:rtmp": "docker compose up -d rtmp-server",
+    "docker:up:frontend": "docker compose up -d internal-app",
+    "docker:up:backend": "docker compose up -d agent streamer rtmp-server",
+    "docker:down": "docker compose down --remove-orphans",
+    "docker:down:app": "docker compose stop internal-app && docker compose rm -f internal-app",
+    "docker:down:agent": "docker compose stop agent && docker compose rm -f agent",
+    "docker:down:streamer": "docker compose stop streamer && docker compose rm -f streamer",
+    "docker:down:rtmp": "docker compose stop rtmp-server && docker compose rm -f rtmp-server"
   }
 }

@@ -1,5 +1,4 @@
 # Tradestream
-# TradeStream
 
 A 24/7 live streaming platform featuring an autonomous AI agent whose actions are influenced by community interaction. The system uses RTMP streaming technology to broadcast a virtual environment where viewers can watch and interact with the AI in real-time.
 
