@@ -75,8 +75,11 @@ services:
       - dokploy-network
     links:
       - redis:redis
+      - internal-api:internal-api
     depends_on:
       redis:
+        condition: service_started
+      internal-api:
         condition: service_started
     labels:
       - traefik.enable=true

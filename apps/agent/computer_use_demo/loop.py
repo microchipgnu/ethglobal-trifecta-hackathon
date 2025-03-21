@@ -6,7 +6,8 @@ import platform
 from collections.abc import Callable
 from datetime import datetime
 from enum import StrEnum
-from typing import Any, cast
+from typing import Any, Dict, Union, cast
+import json
 
 import httpx
 from anthropic import (
@@ -35,6 +36,36 @@ from .tools import (
     ToolResult,
     ToolVersion,
 )
+
+
+async def update_agent_status(key: str, value: Union[str, Dict[str, Any], Any]) -> bool:
+    """
+    Update agent status by sending data to the internal API.
+    
+    Args:
+        key: The key to update (e.g. "agent_status")
+        value: The value to set - can be a string, dictionary, or any serializable object
+        
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    try:
+        # Convert complex objects to JSON-serializable format
+        if not isinstance(value, (str, int, float, bool)) and value is not None:
+            value = json.dumps(value, default=str)
+            
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "http://internal-api:3030/api/data",
+                json={"key": key, "value": value},
+                timeout=10.0
+            )
+            response.raise_for_status()
+            return True
+    except Exception as e:
+        print(f"Failed to update agent status: {e}")
+        return False
+
 
 PROMPT_CACHING_BETA_FLAG = "prompt-caching-2024-07-31"
 
@@ -88,6 +119,16 @@ async def sampling_loop(
     """
     Agentic sampling loop for the assistant/tool interaction of computer use.
     """
+    # Initialize agent status with detailed info
+    await update_agent_status("agent_status", {
+        "state": "initializing",
+        "model": model,
+        "provider": str(provider),
+        "tool_version": str(tool_version),
+        "timestamp": datetime.now().isoformat(),
+        "message_count": len(messages)
+    })
+    
     tool_group = TOOL_GROUPS_BY_VERSION[tool_version]
     tool_collection = ToolCollection(*(ToolCls() for ToolCls in tool_group.tools))
     system = BetaTextBlockParam(
@@ -95,7 +136,18 @@ async def sampling_loop(
         text=f"{SYSTEM_PROMPT}{' ' + system_prompt_suffix if system_prompt_suffix else ''}",
     )
 
+    iteration = 0
     while True:
+        iteration += 1
+        # Update status to indicate we're processing with detailed info
+        await update_agent_status("agent_status", {
+            "state": "processing",
+            "iteration": iteration,
+            "timestamp": datetime.now().isoformat(),
+            "message_count": len(messages),
+            "image_count": only_n_most_recent_images
+        })
+        
         enable_prompt_caching = False
         betas = [tool_group.beta_flag] if tool_group.beta_flag else []
         if token_efficient_tools_beta:
@@ -131,6 +183,17 @@ async def sampling_loop(
                 "thinking": {"type": "enabled", "budget_tokens": thinking_budget}
             }
 
+        # Update status to indicate we're calling the API with detailed info
+        await update_agent_status("agent_status", {
+            "state": "calling_api",
+            "model": model,
+            "provider": str(provider),
+            "max_tokens": max_tokens,
+            "timestamp": datetime.now().isoformat(),
+            "betas": betas,
+            "thinking_budget": thinking_budget
+        })
+        
         # Call the API
         # we use raw_response to provide debug information to streamlit. Your
         # implementation may be able call the SDK directly with:
@@ -146,9 +209,22 @@ async def sampling_loop(
                 extra_body=extra_body,
             )
         except (APIStatusError, APIResponseValidationError) as e:
+            await update_agent_status("agent_status", {
+                "state": "error",
+                "error_type": type(e).__name__,
+                "error_message": str(e),
+                "timestamp": datetime.now().isoformat(),
+                "status_code": getattr(e.response, "status_code", None) if hasattr(e, "response") else None
+            })
             api_response_callback(e.request, e.response, e)
             return messages
         except APIError as e:
+            await update_agent_status("agent_status", {
+                "state": "error",
+                "error_type": type(e).__name__,
+                "error_message": str(e),
+                "timestamp": datetime.now().isoformat()
+            })
             api_response_callback(e.request, e.body, e)
             return messages
 
@@ -156,6 +232,15 @@ async def sampling_loop(
             raw_response.http_response.request, raw_response.http_response, None
         )
 
+        # Update status to indicate we're processing the response with detailed info
+        response_status_code = raw_response.http_response.status_code if hasattr(raw_response, "http_response") else None
+        await update_agent_status("agent_status", {
+            "state": "processing_response",
+            "timestamp": datetime.now().isoformat(),
+            "response_status": response_status_code,
+            "response_id": getattr(raw_response.parse(), "id", None)
+        })
+        
         response = raw_response.parse()
 
         response_params = _response_to_params(response)
@@ -170,6 +255,14 @@ async def sampling_loop(
         for content_block in response_params:
             output_callback(content_block)
             if content_block["type"] == "tool_use":
+                # Update status to indicate we're using tools with detailed info
+                await update_agent_status("agent_status", {
+                    "state": "using_tools",
+                    "tool_name": content_block["name"],
+                    "tool_id": content_block["id"],
+                    "timestamp": datetime.now().isoformat()
+                })
+                
                 result = await tool_collection.run(
                     name=content_block["name"],
                     tool_input=cast(dict[str, Any], content_block["input"]),
@@ -180,8 +273,23 @@ async def sampling_loop(
                 tool_output_callback(result, content_block["id"])
 
         if not tool_result_content:
+            # Update status to indicate we're done with detailed info
+            await update_agent_status("agent_status", {
+                "state": "completed",
+                "timestamp": datetime.now().isoformat(),
+                "message_count": len(messages),
+                "total_iterations": iteration
+            })
             return messages
 
+        # Update status to indicate we're continuing with detailed info
+        await update_agent_status("agent_status", {
+            "state": "continuing",
+            "timestamp": datetime.now().isoformat(),
+            "message_count": len(messages),
+            "tool_results_count": len(tool_result_content),
+            "iteration": iteration
+        })
         messages.append({"content": tool_result_content, "role": "user"})
 
 

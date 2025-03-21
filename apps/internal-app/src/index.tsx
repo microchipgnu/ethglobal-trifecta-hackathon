@@ -126,24 +126,256 @@ function BitcoinChart() {
 }
 
 function SystemInfo() {
+  // Simplified state to just show what we need in the UI
   const [memory, setMemory] = useState(Math.floor(Math.random() * 70) + 30);
+  const [statusText, setStatusText] = useState("READY");
+  const [statusModel, setStatusModel] = useState("");
+  const [statusTool, setStatusTool] = useState("");
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showDebug, setShowDebug] = useState(false);
+  const [debugInfo, setDebugInfo] = useState({ requests: 0, errors: 0, lastResponse: null });
 
   useEffect(() => {
-    const interval = setInterval(() => {
+    // Memory usage simulation (random number between 30 and 100)
+    const memoryInterval = setInterval(() => {
       setMemory(Math.floor(Math.random() * 70) + 30);
     }, 5000);
 
-    return () => clearInterval(interval);
+    // Simple fetch function that doesn't depend on state
+    const fetchAgentStatus = async () => {
+      setIsLoading(true);
+      const apiHost = import.meta.env.VITE_INTERNAL_API_HOST || 'internal-api';
+      const apiPort = import.meta.env.VITE_INTERNAL_API_PORT || '3030';
+      const apiUrl = `http://${apiHost}:${apiPort}/api/data/agent_status`;
+      
+      try {
+        // Simple fetch
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+        
+        console.log("API Response:", data);
+        setDebugInfo(prev => ({ 
+          requests: prev.requests + 1, 
+          errors: prev.errors, 
+          lastResponse: data 
+        }));
+
+        // Extract data for display, regardless of structure
+        if (data && data.value) {
+          let value = data.value;
+          
+          // Try to parse if it's a JSON string
+          if (typeof value === 'string') {
+            try {
+              value = JSON.parse(value);
+            } catch (e) {
+              console.warn("Failed to parse JSON string", e);
+              setStatusText(value.state.toUpperCase() || "UNKNOWN");
+            }
+          }
+          
+          // Handle possible nested JSON strings
+          if (value && typeof value === 'object' && value.state && typeof value.state === 'string') {
+            // Try to parse state if it looks like JSON
+            if (value.state.startsWith('{') && value.state.endsWith('}')) {
+              try {
+                value.state = JSON.parse(value.state);
+              } catch (e) {
+                // If parsing fails, keep as string
+                console.warn("Failed to parse nested state JSON string", e);
+                setStatusText(value.state.toUpperCase() || "UNKNOWN");
+              }
+            }
+          }
+          
+          // Update UI state with whatever data we can extract
+          if (typeof value === 'object') {
+            setStatusText((value.state?.toUpperCase && value.state?.toUpperCase()) || 
+                          (typeof value.state === 'string' ? value.state.toUpperCase() : "UNKNOWN"));
+            setStatusModel(value.model || "");
+            setStatusTool(value.tool_name || "");
+          } else {
+            // If value is not an object (primitive type)
+            setStatusText(String(value).toUpperCase() || "UNKNOWN");
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching status:", error);
+        setDebugInfo(prev => ({ 
+          requests: prev.requests + 1, 
+          errors: prev.errors + 1, 
+          lastResponse: prev.lastResponse 
+        }));
+      } finally {
+        setLastUpdated(new Date().toLocaleTimeString());
+        setIsLoading(false);
+      }
+    };
+
+    // Initial fetch
+    fetchAgentStatus();
+    
+    // Set up interval to fetch agent status every 2 seconds
+    const statusInterval = setInterval(fetchAgentStatus, 2000);
+
+    return () => {
+      clearInterval(memoryInterval);
+      clearInterval(statusInterval);
+    };
   }, []);
+
+  const toggleDebug = () => {
+    setShowDebug(!showDebug);
+  };
+
+  // Determine status indicator color
+  const getStatusColor = () => {
+    switch (statusText) {
+      case "COMPLETED":
+      case "CONTINUING":
+        return 'var(--success)';
+      case "ERROR":
+        return 'var(--danger)';
+      case "PROCESSING":
+      case "PROCESSING_RESPONSE":
+      case "USING_TOOLS":
+      case "CALLING_API":
+        return 'var(--primary)';
+      default:
+        return 'var(--text-muted)';
+    }
+  };
 
   return (
     <div className="overlay-element system-info">
       <div className="card-content">
-        <span className="card-title">Memory Usage</span>
-        <div className="progress-bar">
-          <div className="progress" style={{ width: `${memory}%` }} />
+        <span className="card-title" style={{ display: 'flex', justifyContent: 'space-between' }}>
+          SYSTEM STATUS
+          <span onClick={toggleDebug} style={{ cursor: 'pointer', fontSize: '0.8rem' }}>
+            {showDebug ? '[-]' : '[+]'}
+          </span>
+        </span>
+        
+        {/* Memory usage bar */}
+        <div className="progress-bar" style={{ 
+          width: '100%',
+          height: '10px',
+          backgroundColor: 'rgba(255,255,255,0.1)',
+          borderRadius: '5px',
+          overflow: 'hidden',
+          marginTop: '10px'
+        }}>
+          <div style={{ 
+            width: `${memory}%`, 
+            height: '100%',
+            backgroundColor: memory > 80 ? 'var(--danger)' : 'var(--primary)',
+            transition: 'width 0.5s ease-in-out'
+          }} />
         </div>
-        <span className="card-value">{memory}%</span>
+        <span className="card-value" style={{ 
+          fontSize: '1rem',
+          display: 'block',
+          marginTop: '5px'
+        }}>
+          {memory}% Memory
+        </span>
+        
+        {/* Status information */}
+        <div className="agent-status" style={{ marginTop: '15px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+            <div className="status-indicator" style={{ 
+              backgroundColor: getStatusColor(),
+              display: 'inline-block',
+              width: '12px',
+              height: '12px',
+              borderRadius: '50%',
+              marginRight: '8px'
+            }}></div>
+            <span style={{ 
+              fontSize: '1.1rem', 
+              color: 'var(--text-light)',
+              fontWeight: 'bold'
+            }}>
+              {statusText || "UNKNOWN"}
+            </span>
+          </div>
+          
+          {statusModel && (
+            <div style={{ 
+              fontSize: '0.9rem', 
+              color: 'var(--text-light)', 
+              marginBottom: '5px',
+              display: 'flex',
+              justifyContent: 'space-between'
+            }}>
+              <span>Model:</span> <span>{statusModel}</span>
+            </div>
+          )}
+          
+          {statusTool && (
+            <div style={{ 
+              fontSize: '0.9rem', 
+              color: 'var(--text-light)', 
+              marginBottom: '5px',
+              display: 'flex',
+              justifyContent: 'space-between'
+            }}>
+              <span>Tool:</span> <span>{statusTool}</span>
+            </div>
+          )}
+          
+          {lastUpdated && (
+            <div style={{ 
+              fontSize: '0.8rem', 
+              color: 'var(--text-muted)',
+              marginTop: '5px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <span>Last updated: {lastUpdated}</span>
+              {isLoading && (
+                <div style={{ 
+                  width: '8px', 
+                  height: '8px', 
+                  borderRadius: '50%', 
+                  backgroundColor: 'var(--primary)',
+                  opacity: 0.7,
+                  animation: 'pulse 1s infinite'
+                }}></div>
+              )}
+            </div>
+          )}
+        </div>
+        
+        {/* Debug information */}
+        {showDebug && (
+          <div style={{ 
+            fontSize: '0.8rem', 
+            color: 'var(--text-light)', 
+            marginTop: '10px',
+            padding: '5px',
+            backgroundColor: 'rgba(0,0,0,0.2)',
+            borderRadius: '4px'
+          }}>
+            <div>Requests: {debugInfo.requests}</div>
+            <div>Errors: {debugInfo.errors}</div>
+            {debugInfo.lastResponse && (
+              <div>
+                Response: 
+                <div style={{ 
+                  wordBreak: 'break-all', 
+                  fontSize: '0.7rem', 
+                  maxHeight: '60px',
+                  overflow: 'auto'
+                }}>
+                  {JSON.stringify(debugInfo.lastResponse)}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
