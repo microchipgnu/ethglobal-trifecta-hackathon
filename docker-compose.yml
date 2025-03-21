@@ -27,7 +27,7 @@ services:
       context: .
       dockerfile: ./apps/agent/Dockerfile
     container_name: tradestream-agent
-    shm_size: 2g
+    shm_size: 4g
     ports:
       - 8000:8000
       - 6080:6080

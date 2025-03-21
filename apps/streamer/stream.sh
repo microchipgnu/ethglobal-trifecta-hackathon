@@ -83,6 +83,7 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ] && [ "$SUCCESS" = false ]; do
             --window-size=${RESOLUTION%x*},${RESOLUTION#*x} \
             --start-maximized \
             --background-color=white \
+            --css-flags="*{cursor:none!important;}" \
             --kiosk "$FULL_TARGET_URL" &
         CHROME_PID=$!
         SUCCESS=true

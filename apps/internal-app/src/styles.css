@@ -3,11 +3,16 @@
   --primary-dark: #1d4ed8;
   --secondary: #64748b;
   --background: #f8fafc;
-  --card-bg: #ffffff;
-  --text: #1e293b;
-  --text-light: #64748b;
+  --card-bg: rgba(20, 20, 30, 0.75);
+  --card-border: rgba(255, 255, 255, 0.1);
+  --text: #f8fafc;
+  --text-light: #cbd5e1;
+  --text-muted: #94a3b8;
   --success: #10b981;
   --danger: #ef4444;
+  --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  --card-radius: 12px;
+  --transition: all 0.3s ease;
 }
 
 * {
@@ -56,25 +61,236 @@ body {
   z-index: 10;
 }
 
-.overlay-element {
+/* Overlay grid system */
+.overlay-grid {
   position: absolute;
-  background-color: rgba(255, 255, 255, 0.7);
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  font-size: 0.875rem;
-  color: var(--text);
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas: 
+    "top-left top-center top-right"
+    ". . ."
+    "bottom-left . bottom-right";
+  padding: 1rem;
+  pointer-events: none;
+}
+
+.grid-top-left {
+  grid-area: top-left;
+  justify-self: start;
+  align-self: start;
   pointer-events: auto;
 }
 
+.grid-top-center {
+  grid-area: top-center;
+  justify-self: center;
+  align-self: start;
+  pointer-events: auto;
+}
+
+.grid-top-right {
+  grid-area: top-right;
+  justify-self: end;
+  align-self: start;
+  pointer-events: auto;
+}
+
+.grid-bottom-left {
+  grid-area: bottom-left;
+  justify-self: start;
+  align-self: end;
+  pointer-events: auto;
+}
+
+.grid-bottom-right {
+  grid-area: bottom-right;
+  justify-self: end;
+  align-self: end;
+  pointer-events: auto;
+}
+
+.overlay-element {
+  position: relative;
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: var(--text);
+  overflow: hidden;
+  transition: var(--transition);
+  width: 100%;
+  font-size: 0.875rem;
+  margin: 0.5rem;
+}
+
+.overlay-element:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.3);
+}
+
+.card-content {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.card-title {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.card-value {
+  font-size: 1.25rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.change {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.change.positive {
+  background-color: rgba(16, 185, 129, 0.2);
+  color: var(--success);
+}
+
+.change.negative {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: var(--danger);
+}
+
+.chart {
+  margin-top: 0.5rem;
+  width: 100%;
+  height: 40px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  margin: 0.25rem 0;
+}
+
+.progress {
+  height: 100%;
+  background-color: var(--primary);
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
 .clock {
-  top: 1rem;
-  right: 1rem;
+  width: 180px;
 }
 
 .counter {
-  bottom: 1rem;
-  left: 1rem;
+  width: 150px;
+}
+
+.bitcoin {
+  width: 240px;
+}
+
+.system-info {
+  width: 180px;
+}
+
+.avatar {
+  width: 150px;
+}
+
+.avatar-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0.5rem 0;
+}
+
+.avatar-face {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  background-color: #64B5F6;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.avatar-eye {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  background-color: white;
+  border-radius: 50%;
+  top: 25px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: transform 0.5s ease;
+}
+
+.avatar-eye:first-of-type {
+  left: 22px;
+}
+
+.avatar-eye:nth-of-type(2) {
+  right: 22px;
+}
+
+.avatar-eye.blinking {
+  height: 2px;
+  background-color: #333;
+  border-radius: 2px;
+}
+
+.avatar-pupil {
+  width: 8px;
+  height: 8px;
+  background-color: #333;
+  border-radius: 50%;
+}
+
+.avatar-eye.blinking .avatar-pupil {
+  display: none;
+}
+
+.avatar-mouth {
+  position: absolute;
+  width: 30px;
+  height: 10px;
+  border-radius: 0 0 20px 20px;
+  background-color: #333;
+  bottom: 20px;
+  transition: all 0.3s ease;
+}
+
+.avatar:hover .avatar-face {
+  background-color: #42A5F5;
+}
+
+.avatar:hover .avatar-mouth {
+  width: 35px;
+  height: 15px;
 }
 
 .dot {
@@ -85,4 +301,56 @@ body {
   padding: 0;
   left: 50%;
   top: 50%;
+}
+
+/* Media queries for different screen sizes */
+@media (max-width: 1200px) {
+  .bitcoin {
+    width: 200px;
+  }
+}
+
+@media (max-width: 768px) {
+  .overlay-grid {
+    grid-template-areas: 
+      "top-left top-right"
+      "top-center top-center"
+      "bottom-left bottom-right";
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .bitcoin, .clock, .counter, .system-info, .avatar {
+    width: auto;
+    max-width: 180px;
+  }
+  
+  .avatar {
+    right: 1rem;
+    top: 200px;
+  }
+}
+
+@media (max-width: 480px) {
+  .overlay-grid {
+    grid-template-areas: 
+      "top-left"
+      "top-right"
+      "top-center"
+      "bottom-left"
+      "bottom-right";
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-height: 600px) {
+  .grid-top-center {
+    display: none;
+  }
+  
+  .overlay-grid {
+    grid-template-areas: 
+      "top-left top-right"
+      ". ."
+      "bottom-left bottom-right";
+  }
 }
