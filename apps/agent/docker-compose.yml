@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  ts-agent:
+    build:
+      context: ./ts-agent
+      dockerfile: Dockerfile
+    container_name: ts-agent
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./ts-agent/.env
+    environment:
+      - NODE_ENV=production
+    networks:
+      - agent-network
+
+  virtual-desktop:
+    build:
+      context: ./image
+    container_name: virtual-desktop
+    restart: unless-stopped
+    ports:
+      - "6080:6080"  # noVNC port
+    environment:
+      - DISPLAY_WIDTH=1280
+      - DISPLAY_HEIGHT=720
+    volumes:
+      - virtual-desktop-data:/home/user
+    networks:
+      - agent-network
+
+networks:
+  agent-network:
+    driver: bridge
+
+volumes:
+  virtual-desktop-data: 
