@@ -67,6 +67,41 @@ async def update_agent_status(key: str, value: Union[str, Dict[str, Any], Any]) 
         return False
 
 
+async def update_used_tools(tool_name: str, tool_id: str, max_tools: int = 20) -> bool:
+    """
+    Track the last used tools by appending to a list in Redis.
+    
+    Args:
+        tool_name: The name of the tool being used
+        tool_id: The ID of the tool use
+        max_tools: Maximum number of tools to keep in the list (default: 20)
+        
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    try:
+        tool_data = {
+            "name": tool_name,
+            "id": tool_id,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "http://internal-api:3030/api/data/agent_last_used_tools/append",
+                json={
+                    "value": tool_data,
+                    "maxItems": max_tools
+                },
+                timeout=10.0
+            )
+            response.raise_for_status()
+            return True
+    except Exception as e:
+        print(f"Failed to update used tools list: {e}")
+        return False
+
+
 PROMPT_CACHING_BETA_FLAG = "prompt-caching-2024-07-31"
 
 
@@ -262,6 +297,12 @@ async def sampling_loop(
                     "tool_id": content_block["id"],
                     "timestamp": datetime.now().isoformat()
                 })
+                
+                # Track this tool usage in the last used tools list
+                await update_used_tools(
+                    tool_name=content_block["name"],
+                    tool_id=content_block["id"]
+                )
                 
                 result = await tool_collection.run(
                     name=content_block["name"],

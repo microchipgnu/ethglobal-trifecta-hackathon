@@ -19,6 +19,7 @@ from anthropic.types.beta import BetaContentBlockParam, BetaMessageParam
 from computer_use_demo.loop import (
     APIProvider,
     sampling_loop,
+    update_used_tools,
 )
 from computer_use_demo.tools import ToolResult, ToolVersion
 
