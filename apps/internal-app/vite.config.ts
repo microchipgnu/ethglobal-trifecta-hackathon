@@ -21,6 +21,7 @@ export default defineConfig({
       'internal-app',
       'agent',
       'streamer',
+      'internal-api',
     ],
   },
   resolve: {
