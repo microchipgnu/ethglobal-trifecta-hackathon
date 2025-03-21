@@ -12,6 +12,9 @@ services:
       - dokploy-network
     links:
       - agent:agent
+    depends_on:
+      agent:
+        condition: service_healthy
     labels:
       - traefik.enable=true
       - traefik.http.routers.internal-app.rule=Host(`internal-tradestream.${DOMAIN:-localhost}`)
@@ -70,6 +73,13 @@ services:
       - agent:agent
       - rtmp-server:rtmp-server
       - internal-app:internal-app
+    depends_on:
+      agent:
+        condition: service_healthy
+      rtmp-server:
+        condition: service_started
+      internal-app:
+        condition: service_started
 
   rtmp-server:
     image: tiangolo/nginx-rtmp

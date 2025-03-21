@@ -15,7 +15,7 @@ export default defineConfig({
     fs: {
       strict: false,
     },
-    allowedHosts: [`.${process.env.DOMAIN}`, 'localhost'],
+    allowedHosts: [`.${process.env.DOMAIN}`, 'localhost', 'internal-app', 'agent', 'streamer'],
   },
   resolve: {
     dedupe: ['react', 'react-dom'],
