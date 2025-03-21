@@ -1,10 +1,11 @@
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'vite';
 
 console.log(process.env.HOST, process.env.PORT, process.env.DOMAIN);
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
   server: {
     host: process.env.HOST ? process.env.HOST : '0.0.0.0',
     port: process.env.PORT ? Number.parseInt(process.env.PORT) : 5173,

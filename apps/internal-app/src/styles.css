@@ -1,369 +1,206 @@
-:root {
-  --primary: #2563eb;
-  --primary-dark: #1d4ed8;
-  --secondary: #64748b;
-  --background: #f8fafc;
-  --card-bg: rgba(20, 20, 30, 0.75);
-  --card-border: rgba(255, 255, 255, 0.1);
-  --text: #f8fafc;
-  --text-light: #cbd5e1;
-  --text-muted: #94a3b8;
-  --success: #10b981;
-  --danger: #ef4444;
-  --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
-  --card-radius: 12px;
-  --transition: all 0.3s ease;
-}
+@import "tailwindcss";
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+:root {
+  --neon-pink: #ff2a6d;
+  --neon-cyan: #05d9e8;
+  --neon-blue: #005678;
+  --neon-purple: #d300c5;
+  --neon-yellow: #fee800;
+  --neon-green: #39ff14;
+  --dark-bg: #0f0f12;
+  --cyberpunk-grid: repeating-linear-gradient(
+    90deg,
+    rgba(255, 42, 109, 0.07) 0px,
+    rgba(255, 42, 109, 0) 1px,
+    rgba(255, 42, 109, 0) 30px
+  ),
+  repeating-linear-gradient(
+    0deg,
+    rgba(255, 42, 109, 0.07) 0px,
+    rgba(255, 42, 109, 0) 1px,
+    rgba(255, 42, 109, 0) 30px
+  );
 }
 
 body {
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
-  background-color: var(--background);
-  color: var(--text);
+  font-family: "Rajdhani", "Orbitron", "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--dark-bg);
+  color: #ffffff;
   line-height: 1.5;
+  position: relative;
 }
 
-.app-container {
-  min-height: 100vh;
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  padding: 0;
-  margin: 0;
-  overflow: hidden;
+body::before {
+  content: "";
   position: fixed;
   top: 0;
   left: 0;
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 2rem;
-  background-color: var(--card-bg);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.overlay-container {
-  position: absolute;
-  top: 0;
-  left: 0;
   width: 100%;
   height: 100%;
+  background: var(--cyberpunk-grid);
   pointer-events: none;
-  z-index: 10;
+  z-index: -1;
 }
 
-/* Overlay grid system */
-.overlay-grid {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  grid-template-rows: auto 1fr auto;
-  grid-template-areas:
-    "top-left top-center top-right"
-    ". . ."
-    "bottom-left . bottom-right";
-  padding: 1rem;
-  pointer-events: none;
-}
-
-.grid-top-left {
-  grid-area: top-left;
-  justify-self: start;
-  align-self: start;
-  pointer-events: auto;
-}
-
-.grid-top-center {
-  grid-area: top-center;
-  justify-self: center;
-  align-self: start;
-  pointer-events: auto;
-}
-
-.grid-top-right {
-  grid-area: top-right;
-  justify-self: end;
-  align-self: start;
-  pointer-events: auto;
-}
-
-.grid-bottom-left {
-  grid-area: bottom-left;
-  justify-self: start;
-  align-self: end;
-  pointer-events: auto;
-}
-
-.grid-bottom-right {
-  grid-area: bottom-right;
-  justify-self: end;
-  align-self: end;
-  pointer-events: auto;
-}
-
+/* Overlay Components */
 .overlay-element {
-  position: relative;
-  background-color: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: var(--card-radius);
-  box-shadow: var(--card-shadow);
+  background: rgba(15, 15, 18, 0.7);
   backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  color: var(--text);
-  overflow: hidden;
-  transition: var(--transition);
-  width: 100%;
-  font-size: 0.875rem;
-  margin: 0.5rem;
-}
-
-.overlay-element:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.3);
-}
-
-.card-content {
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.card-title {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: 600;
-  color: var(--text-muted);
-}
-
-.card-value {
-  font-size: 1.25rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.change {
-  font-size: 0.75rem;
-  padding: 0.2rem 0.4rem;
   border-radius: 4px;
-  font-weight: 600;
-}
-
-.change.positive {
-  background-color: rgba(16, 185, 129, 0.2);
-  color: var(--success);
-}
-
-.change.negative {
-  background-color: rgba(239, 68, 68, 0.2);
-  color: var(--danger);
-}
-
-.chart {
-  margin-top: 0.5rem;
-  width: 100%;
-  height: 40px;
-}
-
-.progress-bar {
-  width: 100%;
-  height: 6px;
-  background-color: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
+  box-shadow: 0 0 15px rgba(255, 42, 109, 0.3), 0 0 30px rgba(5, 217, 232, 0.1);
+  border: 1px solid rgba(255, 42, 109, 0.4);
+  border-left: 2px solid var(--neon-pink);
   overflow: hidden;
-  margin: 0.25rem 0;
-}
-
-.progress {
   height: 100%;
-  background-color: var(--primary);
-  border-radius: 3px;
-  transition: width 0.5s ease;
-}
-
-.clock {
-  width: 180px;
-}
-
-.counter {
-  width: 150px;
-}
-
-.bitcoin {
-  width: 240px;
-}
-
-.system-info {
-  width: 240px;
-}
-
-.avatar {
-  width: 150px;
-}
-
-.avatar-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 0.5rem 0;
-}
-
-.avatar-face {
   position: relative;
-  width: 80px;
-  height: 80px;
-  background-color: #64b5f6;
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
-.avatar-eye {
+.overlay-element::after {
+  content: "";
   position: absolute;
-  width: 18px;
-  height: 18px;
-  background-color: white;
-  border-radius: 50%;
-  top: 25px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  transition: transform 0.5s ease;
-}
-
-.avatar-eye:first-of-type {
-  left: 22px;
-}
-
-.avatar-eye:nth-of-type(2) {
-  right: 22px;
-}
-
-.avatar-eye.blinking {
+  top: 0;
+  right: 0;
+  width: 100%;
   height: 2px;
-  background-color: #333;
-  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, var(--neon-cyan));
 }
 
-.avatar-pupil {
-  width: 8px;
-  height: 8px;
-  background-color: #333;
-  border-radius: 50%;
+/* Avatar styling */
+.avatar .rounded-full {
+  transition: transform 0.3s ease;
+  border: 2px solid var(--neon-pink);
+  box-shadow: 0 0 15px rgba(255, 42, 109, 0.5);
 }
 
-.avatar-eye.blinking .avatar-pupil {
-  display: none;
+/* Clock styling */
+.clock {
+  border-left: 2px solid var(--neon-cyan);
 }
 
-.avatar-mouth {
+/* Bitcoin styling */
+.bitcoin {
+  border-left: 2px solid var(--neon-yellow);
+}
+
+/* Counter styling */
+.counter {
+  border-left: 2px solid var(--neon-green);
+}
+
+/* System info styling */
+.system-info {
+  border-left: 2px solid var(--neon-purple);
+}
+
+/* Animated status indicators */
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-glitch {
+  animation: glitch 2s linear infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@keyframes glitch {
+  0% {
+    transform: translateX(0);
+  }
+  2% {
+    transform: translateX(-2px);
+    filter: brightness(1.1);
+  }
+  4% {
+    transform: translateX(2px);
+    filter: brightness(0.9);
+  }
+  6% {
+    transform: translateX(0);
+    filter: brightness(1);
+  }
+  92% {
+    transform: translateX(0);
+    filter: brightness(1);
+  }
+  94% {
+    transform: translateX(-3px);
+    filter: brightness(1.2) hue-rotate(5deg);
+  }
+  96% {
+    transform: translateX(3px);
+    filter: brightness(0.8) hue-rotate(-5deg);
+  }
+  98% {
+    transform: translateX(0);
+    filter: brightness(1);
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Scan line effect */
+.scan-line {
   position: absolute;
-  width: 30px;
-  height: 10px;
-  border-radius: 0 0 20px 20px;
-  background-color: #333;
-  bottom: 20px;
-  transition: all 0.3s ease;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: rgba(5, 217, 232, 0.2);
+  animation: scanline 3s linear infinite;
+  pointer-events: none;
+  z-index: 1;
 }
 
-.avatar:hover .avatar-face {
-  background-color: #42a5f5;
-}
-
-.avatar:hover .avatar-mouth {
-  width: 35px;
-  height: 15px;
-}
-
-.dot {
-  width: 1rem;
-  height: 1rem;
-  border-radius: 50%;
-  background-color: var(--primary);
-  padding: 0;
-  left: 50%;
-  top: 50%;
-}
-
-.agent-status {
-  margin-top: 0.5rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid var(--card-border);
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-/* Media queries for different screen sizes */
-@media (max-width: 1200px) {
-  .bitcoin {
-    width: 200px;
+@keyframes scanline {
+  0% {
+    top: 0%;
+  }
+  100% {
+    top: 100%;
   }
 }
 
-@media (max-width: 768px) {
-  .overlay-grid {
-    grid-template-areas:
-      "top-left top-right"
-      "top-center top-center"
-      "bottom-left bottom-right";
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .bitcoin,
-  .clock,
-  .counter,
-  .system-info,
-  .avatar {
-    width: auto;
-    max-width: 180px;
-  }
-
-  .avatar {
-    right: 1rem;
-    top: 200px;
-  }
+/* Progress bars */
+.h-2\.5, .h-2 {
+  overflow: hidden;
+  position: relative;
+  background: rgba(15, 15, 18, 0.8);
+  border: 1px solid rgba(255, 42, 109, 0.3);
 }
 
-@media (max-width: 480px) {
-  .overlay-grid {
-    grid-template-areas:
-      "top-left"
-      "top-right"
-      "top-center"
-      "bottom-left"
-      "bottom-right";
-    grid-template-columns: 1fr;
-  }
+.h-2\.5 div, .h-2 div {
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
 }
 
-@media (max-height: 600px) {
-  .grid-top-center {
-    display: none;
-  }
-
-  .overlay-grid {
-    grid-template-areas:
-      "top-left top-right"
-      ". ."
-      "bottom-left bottom-right";
-  }
+.h-2\.5 div::after, .h-2 div::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.1),
+    rgba(255, 255, 255, 0.1) 1px,
+    transparent 1px,
+    transparent 5px
+  );
 }
