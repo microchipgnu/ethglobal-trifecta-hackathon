@@ -13,10 +13,13 @@ services:
     links:
       - agent:agent
       - redis:redis
+      - internal-api:internal-api
     depends_on:
       agent:
         condition: service_healthy
       redis:
+        condition: service_started
+      internal-api:
         condition: service_started
     labels:
       - traefik.enable=true
@@ -24,6 +27,35 @@ services:
       - traefik.http.routers.internal-app.entrypoints=websecure
       - traefik.http.routers.internal-app.tls.certResolver=letsencrypt
       - traefik.http.services.internal-app.loadbalancer.server.port=${INTERNAL_APP_PORT:-5173}
+
+  internal-api:
+    build:
+      context: .
+      dockerfile: ./apps/internal-api/Dockerfile
+    container_name: tradestream-internal-api
+    env_file: .env
+    ports:
+      - "${INTERNAL_API_PORT:-3000}:3000"
+    restart: always
+    networks:
+      - dokploy-network
+    links:
+      - redis:redis
+    depends_on:
+      redis:
+        condition: service_started
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.internal-api.rule=Host(`api.tradestream.${DOMAIN:-localhost}`)
+      - traefik.http.routers.internal-api.entrypoints=websecure
+      - traefik.http.routers.internal-api.tls.certResolver=letsencrypt
+      - traefik.http.services.internal-api.loadbalancer.server.port=${INTERNAL_API_PORT:-3000}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://0.0.0.0:${INTERNAL_API_PORT:-3000}/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
   agent:
     build:
@@ -81,6 +113,7 @@ services:
       - agent:agent
       - rtmp-server:rtmp-server
       - internal-app:internal-app
+      - internal-api:internal-api
       - redis:redis
     depends_on:
       agent:
@@ -88,6 +121,8 @@ services:
       rtmp-server:
         condition: service_started
       internal-app:
+        condition: service_started
+      internal-api:
         condition: service_started
       redis:
         condition: service_started
@@ -118,7 +153,9 @@ services:
     restart: always
     networks:
       - dokploy-network
-    command: redis-server --appendonly yes
+    command: >
+      sh -c "redis-server --appendonly yes 
+      $([[ -n \"$REDIS_PASSWORD\" ]] && echo \"--requirepass $REDIS_PASSWORD\" || echo \"\")"
     labels:
       - traefik.enable=true
       - traefik.http.routers.redis.rule=Host(`redis.tradestream.${DOMAIN:-yourdomain.com}`)

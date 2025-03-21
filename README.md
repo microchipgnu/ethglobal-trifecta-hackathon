@@ -9,6 +9,7 @@ Tradestream is an innovative 24/7 live streaming platform that brings an autonom
 - **Secure VNC-Based Visualization:** Leverages **VNC (Virtual Network Computing)** to provide a secure, real-time view of the AI's environment.
 - **Configurable Streaming Parameters:** Customize resolution, bitrate, and FPS to suit your bandwidth or quality preferences.
 - **Containerized Architecture:** Built with Docker for consistent, hassle-free deployment across environments.
+- **RESTful API:** Internal API for data management and integration with other services.
 
 ---
 
@@ -41,6 +42,7 @@ Follow these steps to set up and run Tradestream on your machine:
    Edit `.env` with your settings. Key variables include:
    - ETHEREUM_PRIVATE_KEY: For blockchain integration (e.g., AI actions or payments).
    - STREAM_KEY: Authenticates the RTMP stream.
+   - REDIS_PASSWORD: Password for Redis (optional, leave empty for no authentication).
    - (Add others as needed based on your setup.)
 
    Generate an Ethereum address and private key:
@@ -68,7 +70,7 @@ Follow these steps to set up and run Tradestream on your machine:
    bun docker:down
    ```
 
-Once running, access the internal app at http://localhost:5173 and the stream at rtmp://localhost:1935/live/stream (verify URLs based on your configuration).
+Once running, access the internal app at http://localhost:5173, the API at http://localhost:3000, and the stream at rtmp://localhost:1935/live/stream (verify URLs based on your configuration).
 
 ### Watching your stream locally
 
@@ -104,6 +106,7 @@ flowchart TD
         %% Services
         agent[Agent<br><i>Ports: 8000, 6080, 8501, 5900, 8080</i><br>Healthcheck: vnc.html]:::mainService
         internal_app[Internal App<br><i>Port: 5173</i>]:::service
+        internal_api[Internal API<br><i>Port: 3000</i>]:::service
         rtmp[RTMP Server<br><i>Port: 1935</i>]:::service
         streamer[Streamer]:::service
         redis[Redis<br><i>Port: 6379</i>]:::service
@@ -111,18 +114,23 @@ flowchart TD
 
         %% Dependencies
         internal_app -->|Depends on| agent
+        internal_app -->|Depends on| internal_api
         internal_app -->|Depends on| redis
+        
+        internal_api -->|Depends on| redis
         
         agent -->|Depends on| redis
         
         streamer -->|Depends on| agent
         streamer -->|Depends on| rtmp
         streamer -->|Depends on| internal_app
+        streamer -->|Depends on| internal_api
         streamer -->|Depends on| redis
         
         %% Data Flow
         agent -->|Serves web interface| internal_app
         internal_app -->|Interacts via API| agent
+        internal_app -->|Uses| internal_api
         streamer -->|Captures VNC output| agent
         streamer -->|Streams to| rtmp
         rtmp -->|Broadcasts| output
@@ -131,6 +139,7 @@ flowchart TD
         network[Dokploy Network]:::network
         agent --- network
         internal_app --- network
+        internal_api --- network
         streamer --- network
         rtmp --- network
         redis --- network
