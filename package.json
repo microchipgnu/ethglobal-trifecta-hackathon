@@ -3,7 +3,7 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
-  "packageManager": "bun@1.2.1",
+  "packageManager": "bun@1.2.5",
   "workspaces": ["packages/*", "apps/*"],
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
