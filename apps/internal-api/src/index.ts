@@ -1,7 +1,7 @@
-import express from 'express';
-import type { Request, Response } from 'express';
 import cors from 'cors';
 import { config } from 'dotenv';
+import express from 'express';
+import type { Request, Response } from 'express';
 import { createClient } from 'redis';
 import routes from './routes/index.js';
 
@@ -13,7 +13,7 @@ const PORT = Number(process.env.INTERNAL_API_PORT) || 3000;
 const HOST = process.env.INTERNAL_API_HOST || '0.0.0.0';
 
 // Redis client setup
-const redisUrl = process.env.REDIS_PASSWORD 
+const redisUrl = process.env.REDIS_PASSWORD
   ? `redis://:${process.env.REDIS_PASSWORD}@${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`
   : `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`;
 

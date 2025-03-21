@@ -7,11 +7,6 @@
     "dev": "echo 'Run with docker-compose'",
     "start": "echo 'Run with docker-compose'",
     "start:detached": "echo 'Run with docker-compose'",
-    "stop": "echo 'Run with docker-compose'",
-    "lint": "biome check .",
-    "format": "biome format --write ."
-  },
-  "devDependencies": {
-    "@biomejs/biome": "^1.9.4"
+    "stop": "echo 'Run with docker-compose'"
   }
-} 
+}

@@ -6,7 +6,7 @@
   "packageManager": "bun@1.2.1",
   "workspaces": ["packages/*", "apps/*"],
   "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
+    "@biomejs/biome": "1.9.4",
     "@types/bun": "latest",
     "turbo": "^2.4.4"
   },
@@ -17,10 +17,8 @@
     "generate-address": "bun scripts/generate-address.ts",
     "dev": "turbo run dev",
     "build": "turbo run build",
-    "lint": "turbo run lint && biome check .",
-    "format": "turbo run format && biome format --write .",
-    "format:fix": "biome format --write .",
-    "format:check": "biome format .",
+    "check": "biome check",
+    "check:fix": "biome check --write",
     "start": "turbo run start",
     "docker:build": "docker compose build --no-cache",
     "docker:build:app": "docker compose build internal-app",

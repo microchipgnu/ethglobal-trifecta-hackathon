@@ -1,5 +1,11 @@
 {
   "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "defaultBranch": "main",
+    "useIgnoreFile": true
+  },
   "organizeImports": {
     "enabled": true
   },
@@ -20,5 +26,8 @@
       "trailingCommas": "es5",
       "semicolons": "always"
     }
+  },
+  "files": {
+    "ignore": [".next/**", "dist/**", "node_modules/**"]
   }
 }

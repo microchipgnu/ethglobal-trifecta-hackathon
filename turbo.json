@@ -4,17 +4,15 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**"]
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
     "dev": {
       "cache": false,
       "persistent": true
     },
-    "lint": {
-      "outputs": []
-    },
-    "format": {
-      "outputs": []
+    "//#check": {},
+    "//#check:fix": {
+      "cache": false
     },
     "start": {
       "cache": false

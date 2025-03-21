@@ -22,7 +22,7 @@
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
   background-color: var(--background);
   color: var(--text);
   line-height: 1.5;
@@ -71,7 +71,7 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   grid-template-rows: auto 1fr auto;
-  grid-template-areas: 
+  grid-template-areas:
     "top-left top-center top-right"
     ". . ."
     "bottom-left . bottom-right";
@@ -228,7 +228,7 @@ body {
   position: relative;
   width: 80px;
   height: 80px;
-  background-color: #64B5F6;
+  background-color: #64b5f6;
   border-radius: 50%;
   display: flex;
   justify-content: center;
@@ -285,7 +285,7 @@ body {
 }
 
 .avatar:hover .avatar-face {
-  background-color: #42A5F5;
+  background-color: #42a5f5;
 }
 
 .avatar:hover .avatar-mouth {
@@ -312,18 +312,22 @@ body {
 
 @media (max-width: 768px) {
   .overlay-grid {
-    grid-template-areas: 
+    grid-template-areas:
       "top-left top-right"
       "top-center top-center"
       "bottom-left bottom-right";
     grid-template-columns: 1fr 1fr;
   }
-  
-  .bitcoin, .clock, .counter, .system-info, .avatar {
+
+  .bitcoin,
+  .clock,
+  .counter,
+  .system-info,
+  .avatar {
     width: auto;
     max-width: 180px;
   }
-  
+
   .avatar {
     right: 1rem;
     top: 200px;
@@ -332,7 +336,7 @@ body {
 
 @media (max-width: 480px) {
   .overlay-grid {
-    grid-template-areas: 
+    grid-template-areas:
       "top-left"
       "top-right"
       "top-center"
@@ -346,9 +350,9 @@ body {
   .grid-top-center {
     display: none;
   }
-  
+
   .overlay-grid {
-    grid-template-areas: 
+    grid-template-areas:
       "top-left top-right"
       ". ."
       "bottom-left bottom-right";
