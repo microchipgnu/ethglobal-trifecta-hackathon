@@ -101,24 +101,39 @@ This diagram outlines Tradestream's Docker-based architecture and component inte
 flowchart TD
     %% Docker Environment
     subgraph "Docker Environment"
-        entry --> agent[Agent<br><i>Ports: 8000, 6080, 8501, 5900, 8080</i><br>Healthcheck: vnc.html]:::mainService
-        entry --> internal_app[Internal App<br><i>Port: 5173</i>]:::service
-        entry --> rtmp[RTMP Server<br><i>Port: 1935</i>]:::service
+        %% Services
+        agent[Agent<br><i>Ports: 8000, 6080, 8501, 5900, 8080</i><br>Healthcheck: vnc.html]:::mainService
+        internal_app[Internal App<br><i>Port: 5173</i>]:::service
+        rtmp[RTMP Server<br><i>Port: 1935</i>]:::service
+        streamer[Streamer]:::service
+        redis[Redis<br><i>Port: 6379</i>]:::service
+        output[Output Stream]
 
-        %% Internal Flow
+        %% Dependencies
+        internal_app -->|Depends on| agent
+        internal_app -->|Depends on| redis
+        
+        agent -->|Depends on| redis
+        
+        streamer -->|Depends on| agent
+        streamer -->|Depends on| rtmp
+        streamer -->|Depends on| internal_app
+        streamer -->|Depends on| redis
+        
+        %% Data Flow
         agent -->|Serves web interface| internal_app
         internal_app -->|Interacts via API| agent
-        internal_app -->|Sends stream data| streamer[Streamer]:::service
         streamer -->|Captures VNC output| agent
         streamer -->|Streams to| rtmp
-        rtmp -->|Broadcasts| output[Output Stream]
-
-        %% Network Connection
+        rtmp -->|Broadcasts| output
+        
+        %% All services connected to network
         network[Dokploy Network]:::network
-        agent -->|Connected to| network
-        internal_app -->|Connected to| network
-        streamer -->|Connected to| network
-        rtmp -->|Connected to| network
+        agent --- network
+        internal_app --- network
+        streamer --- network
+        rtmp --- network
+        redis --- network
     end
 
     %% Styling
