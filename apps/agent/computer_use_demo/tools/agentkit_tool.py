@@ -20,17 +20,40 @@ class BaseAgentKitTool:
     name: Literal["agentkit"] = "agentkit"
 
     def __init__(self):
+        print("Initializing AgentKitTool...")
+        self._validate_environment()
         self.agent_kit = self._initialize_agent_kit()
+        if not self.agent_kit:
+            print("WARNING: agent_kit initialization failed!")
         self.available_actions = self._get_available_actions() if self.agent_kit else []
+        print(f"Found {len(self.available_actions)} available actions")
+
+    def _validate_environment(self):
+        """Validate that necessary environment variables are set."""
+        private_key_vars = ["PRIVATE_KEY"]
+        cdp_vars = ["CDP_API_KEY_NAME", "CDP_API_KEY_PRIVATE"]
+        
+        private_key_status = bool(os.environ.get("PRIVATE_KEY"))
+        cdp_status = all(bool(os.environ.get(var)) for var in cdp_vars)
+        
+        if not (private_key_status or cdp_status):
+            print("WARNING: Neither private key nor CDP environment variables are set.")
+            print(f"Private key: {bool(os.environ.get('PRIVATE_KEY'))}")
+            print(f"CDP keys: {[f'{var}={bool(os.environ.get(var))}' for var in cdp_vars]}")
+            return False
+        return True
 
     def _initialize_agent_kit(self) -> Optional[AgentKit]:
         """Initialize the AgentKit instance with either CDP wallet or private key."""
         # Check if private key is available - prefer private key if present
         private_key = os.environ.get("PRIVATE_KEY")
         
+        print(f"Initializing AgentKit with private_key available: {bool(private_key)}")
+        
         if private_key and private_key.startswith("0x"):
             return self._initialize_with_private_key(private_key)
         else:
+            print("Falling back to CDP initialization")
             return self._initialize_with_cdp()
     
     def _initialize_with_private_key(self, private_key: str) -> Optional[AgentKit]:
@@ -180,6 +203,10 @@ class AgentKitTool20241022(BaseAgentKitTool, BaseAnthropicTool):
     async def __call__(self, **kwargs) -> ToolResult:
         """Execute a blockchain action using AgentKit."""
         action = kwargs.get("action", "")
+        print(f"AgentKitTool20241022 called with action: {action}, kwargs: {kwargs}")
+        
+        if not action:
+            return ToolResult(error="No action specified. Please provide an 'action' parameter.")
         
         if action == "get_wallet_address":
             return await self.get_wallet_address(kwargs)
@@ -205,6 +232,10 @@ class AgentKitTool20250124(BaseAgentKitTool, BaseAnthropicTool):
     async def __call__(self, **kwargs) -> ToolResult:
         """Execute a blockchain action using AgentKit."""
         action = kwargs.get("action", "")
+        print(f"AgentKitTool20250124 called with action: {action}, kwargs: {kwargs}")
+        
+        if not action:
+            return ToolResult(error="No action specified. Please provide an 'action' parameter.")
         
         if action == "get_wallet_address":
             return await self.get_wallet_address(kwargs)
