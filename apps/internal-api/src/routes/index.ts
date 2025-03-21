@@ -5,9 +5,15 @@ import { redisClient } from '../index.js';
 const router = express.Router();
 
 // Example route that returns data from Redis
-router.get('/data', async (req: Request, res: Response) => {
+router.get('/data/:key', async (req: Request, res: Response) => {
   try {
-    const data = await redisClient.get('example-key');
+    const { key } = req.params;
+    
+    if (!key) {
+      return res.status(400).json({ error: 'Key parameter is required' });
+    }
+    
+    const data = await redisClient.get(key);
     res.json({ data: data || 'No data found' });
   } catch (error) {
     console.error('Error fetching data:', error);
