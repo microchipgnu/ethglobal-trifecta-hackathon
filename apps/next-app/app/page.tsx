@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { PrivyAuth } from './components/PrivyAuth';
 
 export default function Home() {
   return (
@@ -12,6 +13,15 @@ export default function Home() {
           height={38}
           priority
         />
+
+        {/* Privy Authentication Component */}
+        <div className="w-full max-w-md mx-auto bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+          <h2 className="text-2xl font-bold mb-4 text-center">
+            Authentication
+          </h2>
+          <PrivyAuth />
+        </div>
+
         <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
           <li className="mb-2 tracking-[-.01em]">
             Get started by editing{' '}
@@ -51,6 +61,7 @@ export default function Home() {
           </a>
         </div>
       </main>
+      {/* Footer section */}
       <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
         <a
           className="flex items-center gap-2 hover:underline hover:underline-offset-4"
