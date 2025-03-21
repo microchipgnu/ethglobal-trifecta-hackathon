@@ -70,7 +70,7 @@ Follow these steps to set up and run Tradestream on your machine:
    bun docker:down
    ```
 
-Once running, access the internal app at http://localhost:5173, the API at http://localhost:3000, and the stream at rtmp://localhost:1935/live/stream (verify URLs based on your configuration).
+Once running, access the internal app at http://localhost:5173, the API at http://localhost:3030, and the stream at rtmp://localhost:1935/live/stream (verify URLs based on your configuration).
 
 ### Watching your stream locally
 
@@ -106,7 +106,7 @@ flowchart TD
         %% Services
         agent[Agent<br><i>Ports: 8000, 6080, 8501, 5900, 8080</i><br>Healthcheck: vnc.html]:::mainService
         internal_app[Internal App<br><i>Port: 5173</i>]:::service
-        internal_api[Internal API<br><i>Port: 3000</i>]:::service
+        internal_api[Internal API<br><i>Port: 3030</i>]:::service
         rtmp[RTMP Server<br><i>Port: 1935</i>]:::service
         streamer[Streamer]:::service
         redis[Redis<br><i>Port: 6379</i>]:::service

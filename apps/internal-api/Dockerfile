@@ -11,7 +11,7 @@ RUN bun install
 COPY ./apps/internal-api/src ./src
 
 # Expose the port
-EXPOSE ${INTERNAL_API_PORT:-3000}
+EXPOSE ${INTERNAL_API_PORT:-3030}
 
 # Start the application
 CMD ["bun", "src/index.ts"] 

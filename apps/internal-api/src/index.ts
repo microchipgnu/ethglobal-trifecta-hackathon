@@ -9,7 +9,7 @@ import routes from './routes/index.js';
 config();
 
 const app = express();
-const PORT = Number(process.env.INTERNAL_API_PORT) || 3000;
+const PORT = Number(process.env.INTERNAL_API_PORT) || 3030;
 const HOST = process.env.INTERNAL_API_HOST || '0.0.0.0';
 
 // Redis client setup
