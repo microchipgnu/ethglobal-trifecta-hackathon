@@ -12,9 +12,12 @@ services:
       - dokploy-network
     links:
       - agent:agent
+      - redis:redis
     depends_on:
       agent:
         condition: service_healthy
+      redis:
+        condition: service_started
     labels:
       - traefik.enable=true
       - traefik.http.routers.internal-app.rule=Host(`internal-tradestream.${DOMAIN:-localhost}`)
@@ -38,6 +41,11 @@ services:
     env_file: .env
     networks:
       - dokploy-network
+    links:
+      - redis:redis
+    depends_on:
+      redis:
+        condition: service_started
     labels:
       - traefik.enable=true
       - traefik.http.routers.computer-use-demo.rule=Host(`desktop.tradestream.${DOMAIN:-yourdomain.com}`)
@@ -73,12 +81,15 @@ services:
       - agent:agent
       - rtmp-server:rtmp-server
       - internal-app:internal-app
+      - redis:redis
     depends_on:
       agent:
         condition: service_healthy
       rtmp-server:
         condition: service_started
       internal-app:
+        condition: service_started
+      redis:
         condition: service_started
 
   rtmp-server:
@@ -95,6 +106,28 @@ services:
       - traefik.http.routers.rtmp.entrypoints=websecure
       - traefik.http.routers.rtmp.tls.certResolver=letsencrypt
       - traefik.http.services.rtmp.loadbalancer.server.port=1935
+
+  redis:
+    image: redis:alpine
+    container_name: tradestream-redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    env_file: .env
+    volumes:
+      - redis-data:/data
+    restart: always
+    networks:
+      - dokploy-network
+    command: redis-server --appendonly yes
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.redis.rule=Host(`redis.tradestream.${DOMAIN:-yourdomain.com}`)
+      - traefik.http.routers.redis.entrypoints=websecure
+      - traefik.http.routers.redis.tls.certResolver=letsencrypt
+      - traefik.http.services.redis.loadbalancer.server.port=${REDIS_PORT:-6379}
+
+volumes:
+  redis-data:
 
 networks:
   dokploy-network:
