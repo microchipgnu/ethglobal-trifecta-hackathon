@@ -15,9 +15,38 @@ function Clock() {
 
   return (
     <div className="overlay-element clock">
-      <div className="card-content">
-        <span className="card-title">Time</span>
-        <span className="card-value">{time.toLocaleTimeString()}</span>
+      <div className="scan-line"></div>
+      <div className="flex flex-col p-4">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-xs uppercase tracking-wider text-cyan-300 font-semibold" style={{color: 'var(--neon-cyan)', textShadow: '0 0 5px var(--neon-cyan)'}}>
+            SYSTEM TIME
+          </span>
+          <div className="px-2 py-0.5 text-xs" style={{border: '1px solid var(--neon-cyan)', borderRadius: '2px'}}>
+            <span style={{color: 'var(--neon-cyan)'}}>SYS.CLOCK</span>
+          </div>
+        </div>
+        <div className="flex items-center animate-glitch">
+          <span className="text-3xl font-bold" style={{color: 'white', textShadow: '0 0 10px var(--neon-cyan)'}}>
+            {time.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+          </span>
+          <span className="ml-2 text-sm" style={{color: 'var(--neon-cyan)'}}>
+            {time.getSeconds().toString().padStart(2, '0')}
+          </span>
+        </div>
+        <div className="mt-4 mb-2">
+          <div className="h-0.5 w-full" style={{background: 'var(--neon-cyan)', boxShadow: '0 0 5px var(--neon-cyan)'}}></div>
+        </div>
+        <span className="text-xs mt-2" style={{color: 'rgba(255,255,255,0.7)'}}>
+          {time.toLocaleDateString([], {weekday: 'long', month: 'long', day: 'numeric'})}
+        </span>
+        <div className="mt-2 grid grid-cols-4 gap-1">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-1" style={{
+              background: i === time.getSeconds() % 4 ? 'var(--neon-cyan)' : 'rgba(255,255,255,0.2)',
+              boxShadow: i === time.getSeconds() % 4 ? '0 0 5px var(--neon-cyan)' : 'none',
+            }}></div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -25,13 +54,67 @@ function Clock() {
 
 function AnimatedCounter() {
   // Get address from environment variables
-  const address = import.meta.env.VITE_ADDRESS || 'No Address Available';
+  const address = import.meta.env.VITE_ADDRESS || '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
+  const [glitching, setGlitching] = useState(false);
 
+  useEffect(() => {
+    // Create glitch effect periodically
+    const glitchInterval = setInterval(() => {
+      setGlitching(true);
+      setTimeout(() => setGlitching(false), 200);
+    }, 5000);
+    
+    return () => clearInterval(glitchInterval);
+  }, []);
+
+  // Show first and last characters of the address
+  const shortenedAddress = `${address.slice(0, 6)}...${address.slice(-4)}`;
+  
   return (
     <div className="overlay-element counter">
-      <div className="card-content">
-        <span className="card-title">Address</span>
-        <span className="card-value">{address}</span>
+      <div className="scan-line"></div>
+      <div className="flex flex-col p-4">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-xs uppercase tracking-wider font-semibold" 
+            style={{color: 'var(--neon-green)', textShadow: '0 0 5px var(--neon-green)'}}>
+            WALLET.ID
+          </span>
+          <div className="px-2 py-0.5 text-xs" 
+            style={{border: '1px solid var(--neon-green)', borderRadius: '2px'}}>
+            <span style={{color: 'var(--neon-green)'}}>ETH</span>
+          </div>
+        </div>
+        <div 
+          className={`text-sm font-mono p-2 rounded ${glitching ? 'animate-glitch' : ''}`}
+          style={{
+            background: 'rgba(15, 15, 18, 0.8)',
+            border: '1px solid var(--neon-green)',
+            boxShadow: '0 0 10px rgba(57, 255, 20, 0.2) inset',
+            color: 'var(--neon-green)',
+            textShadow: '0 0 5px var(--neon-green)'
+          }}
+        >
+          {address}
+        </div>
+        <div className="mt-3 flex justify-between items-center">
+          <div className="flex items-center">
+            <div className="w-2 h-2 rounded-full mr-2 animate-pulse"
+              style={{backgroundColor: 'var(--neon-green)', boxShadow: '0 0 10px var(--neon-green)'}}></div>
+            <span className="text-xs" style={{color: 'var(--neon-green)'}}>CONNECTED</span>
+          </div>
+          <div className="text-xs px-2 py-1 rounded"
+            style={{background: 'rgba(57, 255, 20, 0.1)', border: '1px solid rgba(57, 255, 20, 0.3)'}}>
+            {shortenedAddress}
+          </div>
+        </div>
+        <div className="mt-2 grid grid-cols-6 gap-1">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="h-1" style={{
+              background: Math.random() > 0.5 ? 'var(--neon-green)' : 'rgba(255,255,255,0.2)',
+              boxShadow: Math.random() > 0.5 ? '0 0 5px var(--neon-green)' : 'none',
+            }}></div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -44,6 +127,8 @@ function BitcoinChart() {
   const [price, setPrice] = useState<number | null>(null);
   const [priceHistory, setPriceHistory] = useState<number[]>([]);
   const [change, setChange] = useState<number>(0);
+  const [isRising, setIsRising] = useState<boolean>(true);
+  const [glitchChart, setGlitchChart] = useState<boolean>(false);
 
   useEffect(() => {
     // Fetch initial price
@@ -51,8 +136,17 @@ function BitcoinChart() {
 
     // Set up interval to fetch price every 30 seconds
     const interval = setInterval(fetchBitcoinPrice, 30000);
+    
+    // Occasional chart glitch effect
+    const glitchInterval = setInterval(() => {
+      setGlitchChart(true);
+      setTimeout(() => setGlitchChart(false), 300);
+    }, 7000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      clearInterval(glitchInterval);
+    };
   }, []);
 
   const fetchBitcoinPrice = async () => {
@@ -69,6 +163,7 @@ function BitcoinChart() {
         const oldPrice = priceHistory[0];
         const changePercent = ((newPrice - oldPrice) / oldPrice) * 100;
         setChange(Number(changePercent.toFixed(2)));
+        setIsRising(newPrice > oldPrice);
       }
 
       // Add to history and keep last 30 points
@@ -81,44 +176,152 @@ function BitcoinChart() {
     }
   };
 
+  // Format price with commas
+  const formattedPrice = price ? price.toLocaleString('en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }) : 'LOADING...';
+
+  // Color based on price trend
+  const trendColor = isRising ? 'var(--neon-green)' : 'var(--neon-pink)';
+  const gradientId = `bitcoin-gradient-${isRising ? 'up' : 'down'}`;
+
   return (
     <div className="overlay-element bitcoin">
-      <div className="card-content">
-        <span className="card-title">Bitcoin Price</span>
-        <span className="card-value">
-          ${price?.toLocaleString() || 'Loading...'}
+      <div className="scan-line"></div>
+      <div className="flex flex-col p-4">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-xs uppercase tracking-wider font-semibold" 
+            style={{color: 'var(--neon-yellow)', textShadow: '0 0 5px var(--neon-yellow)'}}>
+            PUMP.TRACKER
+          </span>
+          <div className="px-2 py-0.5 text-xs" 
+            style={{border: '1px solid var(--neon-yellow)', borderRadius: '2px'}}>
+            <span style={{color: 'var(--neon-yellow)'}}>BTC/USD</span>
+          </div>
+        </div>
+        
+        <div className="flex items-baseline mb-1">
+          <span className="text-3xl font-bold" 
+            style={{color: 'white', textShadow: `0 0 10px ${trendColor}`}}>
+            ${formattedPrice}
+          </span>
           {price && (
-            <span className={`change ${change >= 0 ? 'positive' : 'negative'}`}>
-              {change >= 0 ? '↑' : '↓'} {Math.abs(change)}%
-            </span>
+            <div className="ml-3 flex items-center"
+                style={{color: trendColor, textShadow: `0 0 5px ${trendColor}`}}>
+              <span className="text-lg mr-1">{change >= 0 ? '↑' : '↓'}</span>
+              <span className="font-medium">{Math.abs(change)}%</span>
+            </div>
           )}
-        </span>
-        <div className="chart">
+        </div>
+        
+        <div className="mt-4 h-20 relative">
           {priceHistory.length > 1 && (
             <svg
-              width="100%"
-              height="40"
+              className={`w-full h-20 ${glitchChart ? 'animate-glitch' : ''}`}
               viewBox="0 0 100 40"
               preserveAspectRatio="none"
+              style={{filter: glitchChart ? 'hue-rotate(90deg) saturate(200%)' : 'none'}}
             >
-              <title>Bitcoin Price</title>
+              <defs>
+                <linearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor={trendColor} stopOpacity="0.3" />
+                  <stop offset="100%" stopColor={trendColor} stopOpacity="0" />
+                </linearGradient>
+                
+                {/* Grid pattern */}
+                <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
+                  <path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="0.5"/>
+                </pattern>
+              </defs>
+              
+              {/* Background grid */}
+              <rect width="100" height="40" fill="url(#grid)" />
+              
+              {/* Horizontal lines */}
+              {[...Array(4)].map((_, i) => (
+                <line 
+                  key={i} 
+                  x1="0" 
+                  y1={10 * i} 
+                  x2="100" 
+                  y2={10 * i} 
+                  stroke="rgba(255, 255, 255, 0.1)" 
+                  strokeWidth="0.5" 
+                  strokeDasharray="1,1"
+                />
+              ))}
+              
+              {/* Area fill under the line */}
               <path
                 d={`M${priceHistory
                   .map((price, index) => {
                     const x = 100 - index * (100 / (priceHistory.length - 1));
                     const min = Math.min(...priceHistory);
                     const max = Math.max(...priceHistory);
-                    const range = max - min;
+                    const range = max - min || 1; // Avoid division by zero
+                    const y = 40 - ((price - min) / range) * 40;
+                    return `${index === 0 ? 'M' : 'L'}${x},${y}`;
+                  })
+                  .join(' ')}L0,40L100,40Z`}
+                fill={`url(#${gradientId})`}
+              />
+              
+              {/* Line */}
+              <path
+                d={`M${priceHistory
+                  .map((price, index) => {
+                    const x = 100 - index * (100 / (priceHistory.length - 1));
+                    const min = Math.min(...priceHistory);
+                    const max = Math.max(...priceHistory);
+                    const range = max - min || 1; // Avoid division by zero
                     const y = 40 - ((price - min) / range) * 40;
                     return `${index === 0 ? 'M' : 'L'}${x},${y}`;
                   })
                   .join(' ')}`}
                 fill="none"
-                stroke={change >= 0 ? 'var(--success)' : 'var(--danger)'}
-                strokeWidth="2"
+                stroke={trendColor}
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{filter: `drop-shadow(0 0 2px ${trendColor})`}}
               />
+              
+              {/* Dots at data points */}
+              {priceHistory.map((price, index) => {
+                // Only show every 5th point for cleaner look
+                if (index % 5 !== 0 && index !== 0) return null;
+                
+                const x = 100 - index * (100 / (priceHistory.length - 1));
+                const min = Math.min(...priceHistory);
+                const max = Math.max(...priceHistory);
+                const range = max - min || 1;
+                const y = 40 - ((price - min) / range) * 40;
+                
+                return (
+                  <circle
+                    key={index}
+                    cx={x}
+                    cy={y}
+                    r={index === 0 ? "1.5" : "1"}
+                    fill="white"
+                    stroke={trendColor}
+                    strokeWidth="1"
+                  />
+                );
+              })}
             </svg>
           )}
+        </div>
+        
+        <div className="mt-2 flex justify-between items-center">
+          <div className="text-xs" style={{color: 'rgba(255,255,255,0.6)'}}>
+            Last update: {new Date().toLocaleTimeString()}
+          </div>
+          <div className="text-xs px-2 py-0.5 rounded"
+            style={{border: `1px solid ${trendColor}`, color: trendColor}}>
+            30s
+          </div>
         </div>
       </div>
     </div>
@@ -133,14 +336,21 @@ function SystemInfo() {
   const [statusTool, setStatusTool] = useState("");
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [showDebug, setShowDebug] = useState(false);
   const [debugInfo, setDebugInfo] = useState({ requests: 0, errors: 0, lastResponse: null });
+  const [rawResponse, setRawResponse] = useState<any>(null);
+  const [glitchText, setGlitchText] = useState(false);
 
   useEffect(() => {
     // Memory usage simulation (random number between 30 and 100)
     const memoryInterval = setInterval(() => {
       setMemory(Math.floor(Math.random() * 70) + 30);
     }, 5000);
+
+    // Glitch text effect
+    const glitchInterval = setInterval(() => {
+      setGlitchText(true);
+      setTimeout(() => setGlitchText(false), 200);
+    }, 3000);
 
     // Simple fetch function that doesn't depend on state
     const fetchAgentStatus = async () => {
@@ -160,9 +370,68 @@ function SystemInfo() {
           errors: prev.errors, 
           lastResponse: data 
         }));
+        
+        // Store the raw response for display
+        setRawResponse(data);
 
-        // Extract data for display, regardless of structure
-        if (data && data.value) {
+        // Process data (keeping existing logic)
+        if (data && data.data) {
+          try {
+            // The data appears to be a stringified JSON
+            let parsedData = data.data;
+            
+            // First, check if it's a string and try to parse it directly
+            if (typeof parsedData === 'string') {
+              try {
+                // Simple JSON parse first
+                const parsed = JSON.parse(parsedData);
+                if (parsed && parsed.state) {
+                  setStatusText(parsed.state.toUpperCase() || "UNKNOWN");
+                  setStatusModel(parsed.model || "");
+                  setStatusTool(parsed.tool_name || "");
+                  console.log("Successfully parsed the data string:", parsed);
+                  return;
+                }
+              } catch (parseError) {
+                console.log("First parsing attempt failed, trying alternative approach");
+              }
+              
+              // If the above fails, try an alternative approach for the heavily escaped format
+              if (parsedData.includes('\\\"state\\\"')) {
+                const stateMatch = parsedData.match(/\\\"state\\\":\s*\\\"([^\\]+)\\\"/);
+                if (stateMatch && stateMatch[1]) {
+                  setStatusText(stateMatch[1].toUpperCase() || "UNKNOWN");
+                  console.log("Successfully extracted state using regex:", stateMatch[1]);
+                } else {
+                  console.log("No state found in cleaned data:", parsedData);
+                  setStatusText("UNKNOWN");
+                }
+              } else {
+                // Try to extract with simpler regex if the format is different
+                const simpleStateMatch = parsedData.match(/"state":\s*"([^"]+)"/);
+                if (simpleStateMatch && simpleStateMatch[1]) {
+                  setStatusText(simpleStateMatch[1].toUpperCase() || "UNKNOWN");
+                  console.log("Successfully extracted state using simple regex:", simpleStateMatch[1]);
+                } else {
+                  console.log("No state found with simple regex in:", parsedData);
+                  setStatusText("UNKNOWN");
+                }
+              }
+            } else if (parsedData && typeof parsedData === 'object') {
+              // If it's already an object, use it directly
+              if (parsedData.state) {
+                setStatusText(parsedData.state.toUpperCase() || "UNKNOWN");
+              }
+              setStatusModel(parsedData.model || "");
+              setStatusTool(parsedData.tool_name || "");
+            }
+          } catch (e) {
+            console.error("Error parsing data.data:", e, data.data);
+            setStatusText("PARSE ERROR");
+          }
+        }
+        // Keep the existing logic for backward compatibility
+        else if (data && data.value) {
           let value = data.value;
           
           // Try to parse if it's a JSON string
@@ -171,7 +440,7 @@ function SystemInfo() {
               value = JSON.parse(value);
             } catch (e) {
               console.warn("Failed to parse JSON string", e);
-              setStatusText(value.state.toUpperCase() || "UNKNOWN");
+              setStatusText(value.state?.toUpperCase() || "UNKNOWN");
             }
           }
           
@@ -222,160 +491,159 @@ function SystemInfo() {
     return () => {
       clearInterval(memoryInterval);
       clearInterval(statusInterval);
+      clearInterval(glitchInterval);
     };
   }, []);
-
-  const toggleDebug = () => {
-    setShowDebug(!showDebug);
-  };
 
   // Determine status indicator color
   const getStatusColor = () => {
     switch (statusText) {
       case "COMPLETED":
       case "CONTINUING":
-        return 'var(--success)';
+        return 'var(--neon-green)';
       case "ERROR":
-        return 'var(--danger)';
+        return 'var(--neon-pink)';
       case "PROCESSING":
       case "PROCESSING_RESPONSE":
       case "USING_TOOLS":
       case "CALLING_API":
-        return 'var(--primary)';
+        return 'var(--neon-cyan)';
       default:
-        return 'var(--text-muted)';
+        return 'var(--neon-purple)';
     }
+  };
+
+  // Calculate memory color
+  const getMemoryColor = () => {
+    if (memory > 80) return 'var(--neon-pink)'; 
+    if (memory > 60) return 'var(--neon-yellow)';
+    return 'var(--neon-cyan)';
   };
 
   return (
     <div className="overlay-element system-info">
-      <div className="card-content">
-        <span className="card-title" style={{ display: 'flex', justifyContent: 'space-between' }}>
-          SYSTEM STATUS
-          <span onClick={toggleDebug} style={{ cursor: 'pointer', fontSize: '0.8rem' }}>
-            {showDebug ? '[-]' : '[+]'}
+      <div className="scan-line"></div>
+      <div className="flex flex-col p-4">
+        <div className="flex justify-between items-center mb-3">
+          <span className="text-xs uppercase tracking-wider font-semibold" 
+            style={{color: 'var(--neon-purple)', textShadow: '0 0 5px var(--neon-purple)'}}>
+            SYS.DIAGNOSTICS
           </span>
-        </span>
-        
-        {/* Memory usage bar */}
-        <div className="progress-bar" style={{ 
-          width: '100%',
-          height: '10px',
-          backgroundColor: 'rgba(255,255,255,0.1)',
-          borderRadius: '5px',
-          overflow: 'hidden',
-          marginTop: '10px'
-        }}>
-          <div style={{ 
-            width: `${memory}%`, 
-            height: '100%',
-            backgroundColor: memory > 80 ? 'var(--danger)' : 'var(--primary)',
-            transition: 'width 0.5s ease-in-out'
-          }} />
+          <div className="px-2 py-0.5 text-xs" 
+            style={{border: '1px solid var(--neon-purple)', borderRadius: '2px', color: 'var(--neon-purple)'}}>
+            v2.077
+          </div>
         </div>
-        <span className="card-value" style={{ 
-          fontSize: '1rem',
-          display: 'block',
-          marginTop: '5px'
-        }}>
-          {memory}% Memory
-        </span>
+        
+        {/* Memory usage section */}
+        <div className="mb-4">
+          <div className="flex justify-between items-center mb-1">
+            <span className="text-xs" style={{color: 'rgba(255,255,255,0.7)'}}>MEMORY ALLOCATION</span>
+            <span className="text-xs font-medium" style={{color: getMemoryColor()}}>{memory}%</span>
+          </div>
+          <div className="w-full h-2 bg-gray-800 rounded-sm overflow-hidden" style={{
+            border: '1px solid rgba(255,255,255,0.1)',
+            boxShadow: 'inset 0 0 10px rgba(0,0,0,0.5)'
+          }}>
+            <div 
+              className="h-full transition-all duration-500 ease-in-out"
+              style={{ 
+                width: `${memory}%`, 
+                background: getMemoryColor(),
+                boxShadow: `0 0 10px ${getMemoryColor()}`,
+              }}
+            />
+          </div>
+        </div>
         
         {/* Status information */}
-        <div className="agent-status" style={{ marginTop: '15px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
-            <div className="status-indicator" style={{ 
-              backgroundColor: getStatusColor(),
-              display: 'inline-block',
-              width: '12px',
-              height: '12px',
-              borderRadius: '50%',
-              marginRight: '8px'
-            }}></div>
-            <span style={{ 
-              fontSize: '1.1rem', 
-              color: 'var(--text-light)',
-              fontWeight: 'bold'
+        <div className="p-3 bg-gray-800 bg-opacity-60 rounded-sm mb-3" style={{
+          borderLeft: `2px solid ${getStatusColor()}`,
+          borderBottom: `1px solid ${getStatusColor()}`,
+          boxShadow: `0 0 10px rgba(0,0,0,0.5), 0 0 5px ${getStatusColor()}30`
+        }}>
+          <div className="flex items-center mb-2">
+            <div 
+              className="w-3 h-3 rounded-full mr-2 animate-pulse"
+              style={{ 
+                backgroundColor: getStatusColor(),
+                boxShadow: `0 0 10px ${getStatusColor()}`
+              }}
+            ></div>
+            <span className={`font-bold tracking-wide ${glitchText ? 'animate-glitch' : ''}`} style={{
+              color: 'white',
+              textShadow: `0 0 5px ${getStatusColor()}`
             }}>
               {statusText || "UNKNOWN"}
             </span>
+            {isLoading && (
+              <div className="ml-2 w-1.5 h-1.5 rounded-full animate-pulse" style={{
+                backgroundColor: 'var(--neon-cyan)',
+                boxShadow: '0 0 10px var(--neon-cyan)'
+              }}></div>
+            )}
           </div>
           
-          {statusModel && (
-            <div style={{ 
-              fontSize: '0.9rem', 
-              color: 'var(--text-light)', 
-              marginBottom: '5px',
-              display: 'flex',
-              justifyContent: 'space-between'
-            }}>
-              <span>Model:</span> <span>{statusModel}</span>
-            </div>
-          )}
-          
-          {statusTool && (
-            <div style={{ 
-              fontSize: '0.9rem', 
-              color: 'var(--text-light)', 
-              marginBottom: '5px',
-              display: 'flex',
-              justifyContent: 'space-between'
-            }}>
-              <span>Tool:</span> <span>{statusTool}</span>
-            </div>
-          )}
-          
-          {lastUpdated && (
-            <div style={{ 
-              fontSize: '0.8rem', 
-              color: 'var(--text-muted)',
-              marginTop: '5px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between'
-            }}>
-              <span>Last updated: {lastUpdated}</span>
-              {isLoading && (
-                <div style={{ 
-                  width: '8px', 
-                  height: '8px', 
-                  borderRadius: '50%', 
-                  backgroundColor: 'var(--primary)',
-                  opacity: 0.7,
-                  animation: 'pulse 1s infinite'
-                }}></div>
-              )}
-            </div>
-          )}
-        </div>
-        
-        {/* Debug information */}
-        {showDebug && (
-          <div style={{ 
-            fontSize: '0.8rem', 
-            color: 'var(--text-light)', 
-            marginTop: '10px',
-            padding: '5px',
-            backgroundColor: 'rgba(0,0,0,0.2)',
-            borderRadius: '4px'
-          }}>
-            <div>Requests: {debugInfo.requests}</div>
-            <div>Errors: {debugInfo.errors}</div>
-            {debugInfo.lastResponse && (
-              <div>
-                Response: 
-                <div style={{ 
-                  wordBreak: 'break-all', 
-                  fontSize: '0.7rem', 
-                  maxHeight: '60px',
-                  overflow: 'auto'
-                }}>
-                  {JSON.stringify(debugInfo.lastResponse)}
-                </div>
+          <div className="grid grid-cols-2 gap-2 mt-3">
+            {statusModel && (
+              <div className="flex flex-col">
+                <span className="text-xs" style={{color: 'rgba(255,255,255,0.5)'}}>MODEL</span>
+                <span className="text-sm truncate" style={{color: 'var(--neon-cyan)'}}>{statusModel}</span>
+              </div>
+            )}
+            
+            {statusTool && (
+              <div className="flex flex-col">
+                <span className="text-xs" style={{color: 'rgba(255,255,255,0.5)'}}>TOOL</span>
+                <span className="text-sm truncate" style={{color: 'var(--neon-yellow)'}}>{statusTool}</span>
               </div>
             )}
           </div>
+        </div>
+        
+        {/* Last updated timestamp */}
+        {lastUpdated && (
+          <div className="text-xs mb-2 flex justify-between">
+            <span style={{color: 'rgba(255,255,255,0.5)'}}>LAST SYNC:</span>
+            <span style={{color: 'var(--neon-cyan)'}}>{lastUpdated}</span>
+          </div>
         )}
+        
+        {/* API Response Display */}
+        <div className="mt-2 p-2 rounded-sm text-xs" style={{
+          background: 'rgba(15, 15, 18, 0.8)',
+          borderLeft: '1px solid var(--neon-purple)',
+          borderBottom: '1px solid var(--neon-purple)'
+        }}>
+          <div className="font-semibold mb-1" style={{color: 'var(--neon-purple)'}}>API_RESPONSE:</div>
+          <div className="break-all text-xs max-h-20 overflow-auto font-mono p-1 rounded" style={{
+            background: 'rgba(0,0,0,0.3)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            color: 'var(--neon-green)'
+          }}>
+            {rawResponse ? JSON.stringify(rawResponse, null, 1) : "NO_DATA"}
+          </div>
+        </div>
+        
+        {/* Debug information */}
+        <div className="mt-2 p-2 rounded-sm text-xs" style={{
+          background: 'rgba(15, 15, 18, 0.8)',
+          borderLeft: '1px solid var(--neon-yellow)',
+          borderBottom: '1px solid var(--neon-yellow)'
+        }}>
+          <div className="grid grid-cols-2 gap-1">
+            <div className="flex justify-between">
+              <span style={{color: 'rgba(255,255,255,0.5)'}}>REQUESTS:</span>
+              <span style={{color: 'var(--neon-cyan)'}}>{debugInfo.requests}</span>
+            </div>
+            <div className="flex justify-between">
+              <span style={{color: 'rgba(255,255,255,0.5)'}}>ERRORS:</span>
+              <span style={{color: debugInfo.errors > 0 ? 'var(--neon-pink)' : 'var(--neon-green)'}}>
+                {debugInfo.errors}
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -384,6 +652,9 @@ function SystemInfo() {
 function AnimatedAvatar() {
   const [eyePosition, setEyePosition] = useState({ x: 0, y: 0 });
   const [blinking, setBlinking] = useState(false);
+  const [mood, setMood] = useState<'neutral' | 'happy' | 'thinking' | 'glitched'>('neutral');
+  const [glitchEffect, setGlitchEffect] = useState(false);
+  const [haloColor, setHaloColor] = useState('var(--neon-cyan)');
 
   useEffect(() => {
     // Look in random directions
@@ -399,36 +670,172 @@ function AnimatedAvatar() {
       setBlinking(true);
       setTimeout(() => setBlinking(false), 200);
     }, 5000);
+    
+    // Change mood and halo occasionally
+    const moodInterval = setInterval(() => {
+      const moods: Array<'neutral' | 'happy' | 'thinking' | 'glitched'> = ['neutral', 'happy', 'thinking', 'glitched'];
+      const newMood = moods[Math.floor(Math.random() * moods.length)];
+      setMood(newMood);
+      
+      // Change halo color
+      const colors = ['var(--neon-cyan)', 'var(--neon-pink)', 'var(--neon-purple)', 'var(--neon-yellow)'];
+      setHaloColor(colors[Math.floor(Math.random() * colors.length)]);
+    }, 8000);
+    
+    // Create occasional glitch effect
+    const glitchInterval = setInterval(() => {
+      if (Math.random() > 0.7) {
+        setGlitchEffect(true);
+        setTimeout(() => setGlitchEffect(false), 300);
+      }
+    }, 2000);
 
     return () => {
       clearInterval(lookInterval);
       clearInterval(blinkInterval);
+      clearInterval(moodInterval);
+      clearInterval(glitchInterval);
     };
   }, []);
 
+  // Render mouth based on mood
+  const renderMouth = () => {
+    switch(mood) {
+      case 'happy':
+        return (
+          <svg width="20" height="8" viewBox="0 0 20 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M1 1C1 1 5 7 10 7C15 7 19 1 19 1" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+        );
+      case 'thinking':
+        return (
+          <div className="w-6 h-1.5 bg-white rounded-full transform translate-x-2"></div>
+        );
+      case 'glitched':
+        return (
+          <div className="w-8 h-2 bg-white rounded-sm animate-glitch" style={{
+            clipPath: 'polygon(0 0, 100% 0, 85% 100%, 15% 100%)'
+          }}></div>
+        );
+      default: // neutral
+        return (
+          <div className="w-8 h-1.5 bg-white rounded-full"></div>
+        );
+    }
+  };
+
   return (
     <div className="overlay-element avatar">
-      <div className="card-content">
-        <span className="card-title">Assistant</span>
-        <div className="avatar-container">
-          <div className="avatar-face">
-            <div
-              className={`avatar-eye ${blinking ? 'blinking' : ''}`}
+      <div className="scan-line"></div>
+      <div className="flex flex-col p-4">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-xs uppercase tracking-wider font-semibold" 
+            style={{color: 'var(--neon-purple)', textShadow: '0 0 5px var(--neon-purple)'}}>
+            AI.CORE
+          </span>
+          <div className="px-2 py-0.5 text-xs" 
+            style={{border: '1px solid var(--neon-purple)', borderRadius: '2px'}}>
+            <span style={{color: 'var(--neon-purple)'}}>v3.0</span>
+          </div>
+        </div>
+        <div className="flex justify-center items-center">
+          <div 
+            className={`relative w-32 h-32 rounded-full flex flex-col justify-center items-center ${glitchEffect ? 'animate-glitch' : ''}`} 
+            style={{
+              background: 'radial-gradient(circle, rgba(15,15,18,0.8) 0%, rgba(5,5,10,0.9) 100%)',
+              boxShadow: `0 0 30px ${haloColor}40, 0 0 15px ${haloColor}30`,
+              border: `1px solid ${haloColor}`
+            }}
+          >
+            {/* Animated halo ring */}
+            <div 
+              className="absolute inset-0 rounded-full"
               style={{
-                transform: `translate(${eyePosition.x}px, ${eyePosition.y}px)`,
+                border: `2px solid transparent`,
+                borderTopColor: haloColor,
+                borderRadius: '50%',
+                animation: 'spin 4s linear infinite',
               }}
-            >
-              <div className="avatar-pupil" />
-            </div>
-            <div
-              className={`avatar-eye ${blinking ? 'blinking' : ''}`}
+            />
+            
+            {/* Inner ring with circuit pattern */}
+            <div 
+              className="absolute inset-3 rounded-full"
               style={{
-                transform: `translate(${eyePosition.x}px, ${eyePosition.y}px)`,
+                border: `1px solid ${haloColor}60`,
+                boxShadow: `inset 0 0 10px ${haloColor}30`,
+                background: `radial-gradient(circle, transparent 60%, ${haloColor}20 100%)`,
               }}
-            >
-              <div className="avatar-pupil" />
+            />
+            
+            {/* Digital circuit lines */}
+            <div className="absolute inset-0 rounded-full overflow-hidden opacity-30">
+              <div className="h-full w-full" style={{
+                backgroundImage: `
+                  linear-gradient(to right, ${haloColor}20 1px, transparent 1px),
+                  linear-gradient(to bottom, ${haloColor}20 1px, transparent 1px)
+                `,
+                backgroundSize: '8px 8px',
+              }}></div>
             </div>
-            <div className="avatar-mouth" />
+            
+            {/* Face */}
+            <div className="flex justify-around w-16 mb-4 z-10">
+              {/* Left eye */}
+              <div 
+                className={`w-5 h-5 rounded-full flex justify-center items-center transition-all duration-200 ${blinking ? 'h-0.5' : ''}`}
+                style={{
+                  background: 'white',
+                  transform: `translate(${eyePosition.x}px, ${eyePosition.y}px)`,
+                  boxShadow: `0 0 10px ${haloColor}`,
+                }}
+              >
+                <div className="w-2.5 h-2.5 bg-gray-900 rounded-full" />
+              </div>
+              
+              {/* Right eye */}
+              <div 
+                className={`w-5 h-5 rounded-full flex justify-center items-center transition-all duration-200 ${blinking ? 'h-0.5' : ''}`}
+                style={{
+                  background: 'white',
+                  transform: `translate(${eyePosition.x}px, ${eyePosition.y}px)`,
+                  boxShadow: `0 0 10px ${haloColor}`,
+                }}
+              >
+                <div className="w-2.5 h-2.5 bg-gray-900 rounded-full" />
+              </div>
+            </div>
+            
+            {/* Mouth */}
+            <div className="mt-2 flex justify-center items-center h-8 z-10">
+              {renderMouth()}
+            </div>
+            
+            {/* Energy level indicator */}
+            <div className="absolute bottom-4 left-0 right-0 flex justify-center">
+              <div className="w-16 h-1 bg-gray-800 rounded-full overflow-hidden">
+                <div 
+                  className="h-full"
+                  style={{
+                    width: `${65 + Math.sin(Date.now() / 1000) * 20}%`, 
+                    background: haloColor,
+                    boxShadow: `0 0 5px ${haloColor}`,
+                    transition: 'width 0.5s ease'
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="mt-3 flex justify-between items-center">
+          <div className="flex items-center">
+            <div className="w-2 h-2 rounded-full mr-2 animate-pulse"
+              style={{backgroundColor: haloColor, boxShadow: `0 0 10px ${haloColor}`}}></div>
+            <span className="text-xs" style={{color: haloColor}}>ONLINE</span>
+          </div>
+          <div className="text-xs px-2 py-0.5 rounded"
+            style={{border: `1px solid ${haloColor}50`, color: haloColor}}>
+            midcurve.live
           </div>
         </div>
       </div>
@@ -438,30 +845,74 @@ function AnimatedAvatar() {
 
 function App() {
   return (
-    <div className="app-container">
+    <div className="w-full h-screen flex flex-col relative overflow-hidden">
+      {/* Background grid and effects */}
+      <div className="absolute inset-0 pointer-events-none z-0">
+        <div className="absolute inset-0 bg-black opacity-50"></div>
+        <div className="absolute inset-0" 
+          style={{
+            backgroundImage: `
+              linear-gradient(to right, rgba(255, 42, 109, 0.1) 1px, transparent 1px),
+              linear-gradient(to bottom, rgba(255, 42, 109, 0.1) 1px, transparent 1px)
+            `,
+            backgroundSize: '40px 40px',
+            opacity: 0.3
+          }}>
+        </div>
+        
+        {/* Horizontal scan line effect */}
+        <div className="absolute top-0 left-0 w-full h-full pointer-events-none z-20 overflow-hidden">
+          <div className="scan-line"></div>
+        </div>
+        
+        {/* CRT screen effect */}
+        <div className="absolute inset-0 pointer-events-none" 
+          style={{
+            background: 'radial-gradient(circle at center, transparent 50%, rgba(0,0,0,0.3) 100%)',
+            mixBlendMode: 'multiply'
+          }}>
+        </div>
+      </div>
+      
       <iframe
         src={`http://${VNC_HOST}:6080/vnc.html?view_only=1&autoconnect=1&resize=scale`}
-        style={{ width: '100%', height: '100%' }}
+        className="w-full h-full border-0 relative z-10"
         allow="fullscreen"
         title="Agent VNC"
       />
-      <div className="overlay-container">
-        <div className="overlay-grid">
-          <div className="grid-top-left">
+      
+      {/* UI Overlay */}
+      <div className="absolute inset-0 pointer-events-none z-20">
+        <div className="grid grid-cols-3 grid-rows-3 gap-5 p-6 h-full">
+          {/* Top row */}
+          <div className="col-start-1 row-start-1">
             <BitcoinChart />
           </div>
-          <div className="grid-top-center">
+          <div className="col-start-2 row-start-1 flex justify-center">
             <AnimatedAvatar />
           </div>
-          <div className="grid-top-right">
+          <div className="col-start-3 row-start-1">
             <Clock />
           </div>
-          <div className="grid-bottom-left">
+          
+          {/* Bottom row */}
+          <div className="col-start-1 row-start-3">
             <AnimatedCounter />
           </div>
-          <div className="grid-bottom-right">
+          <div className="col-start-3 row-start-3">
             <SystemInfo />
           </div>
+        </div>
+        
+        {/* Cyberpunk logo */}
+        <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 text-xs font-bold tracking-wider"
+          style={{
+            color: 'var(--neon-pink)',
+            textShadow: '0 0 5px var(--neon-pink)',
+            fontFamily: '"Orbitron", sans-serif',
+            letterSpacing: '0.2em'
+          }}>
+          <span style={{opacity: 0.8}}>PUMP.FUN</span>
         </div>
       </div>
     </div>
