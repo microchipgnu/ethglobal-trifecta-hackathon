@@ -24,21 +24,14 @@ function Clock() {
 }
 
 function AnimatedCounter() {
-  const [count, setCount] = useState(0);
-  
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCount(prevCount => (prevCount + 1) % 100);
-    }, 2000);
-    
-    return () => clearInterval(interval);
-  }, []);
+  // Get address from environment variables
+  const address = import.meta.env.VITE_ADDRESS || 'No Address Available';
   
   return (
     <div className="overlay-element counter">
       <div className="card-content">
-        <span className="card-title">Counter</span>
-        <span className="card-value">{count}</span>
+        <span className="card-title">Address</span>
+        <span className="card-value">{address}</span>
       </div>
     </div>
   );

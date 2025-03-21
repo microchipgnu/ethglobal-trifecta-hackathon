@@ -14,6 +14,7 @@
     "typescript": "^5.0.0"
   },
   "scripts": {
+    "generate-address": "bun scripts/generate-address.ts",
     "dev": "turbo run dev",
     "build": "turbo run build",
     "lint": "turbo run lint && biome check .",
@@ -29,7 +30,7 @@
     "docker:up": "docker compose up -d",
     "docker:up:app": "docker compose up -d internal-app",
     "docker:up:agent": "docker compose up -d agent",
-    "docker:up:streamer": "docker compose up -d streamer", 
+    "docker:up:streamer": "docker compose up -d streamer",
     "docker:up:rtmp": "docker compose up -d rtmp-server",
     "docker:up:frontend": "docker compose up -d internal-app",
     "docker:up:backend": "docker compose up -d agent streamer rtmp-server",
@@ -38,5 +39,8 @@
     "docker:down:agent": "docker compose stop agent && docker compose rm -f agent",
     "docker:down:streamer": "docker compose stop streamer && docker compose rm -f streamer",
     "docker:down:rtmp": "docker compose stop rtmp-server && docker compose rm -f rtmp-server"
+  },
+  "dependencies": {
+    "viem": "^2.23.13"
   }
 }

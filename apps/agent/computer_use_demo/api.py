@@ -47,7 +47,7 @@ class PromptRequest(BaseModel):
     messages: List[Message]
     model: Optional[str] = "claude-3-7-sonnet-20250219"
     provider: Optional[str] = APIProvider.ANTHROPIC
-    tool_version: Optional[str] = "computer_use_20250124"
+    tool_version: Optional[str] = "computer_use_agentkit"
     max_tokens: Optional[int] = 4096
     system_prompt_suffix: Optional[str] = ""
     only_n_most_recent_images: Optional[int] = 3

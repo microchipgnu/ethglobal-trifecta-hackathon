@@ -4,3 +4,5 @@ boto3>=1.28.57
 google-auth<3,>=2
 fastapi>=0.104.1
 uvicorn>=0.23.2
+coinbase-agentkit>=0.1.0
+coinbase-agentkit-langchain>=0.1.0

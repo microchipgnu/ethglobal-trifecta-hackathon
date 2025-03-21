@@ -5,9 +5,10 @@ from .base import BaseAnthropicTool
 from .bash import BashTool20241022, BashTool20250124
 from .computer import ComputerTool20241022, ComputerTool20250124
 from .edit import EditTool20241022, EditTool20250124
+from .agentkit_tool import AgentKitTool20241022, AgentKitTool20250124
 
-ToolVersion = Literal["computer_use_20250124", "computer_use_20241022"]
-BetaFlag = Literal["computer-use-2024-10-22", "computer-use-2025-01-24"]
+ToolVersion = Literal["computer_use_20250124", "computer_use_20241022", "computer_use_agentkit_20241022", "computer_use_agentkit_20250124"]
+BetaFlag = Literal["computer-use-2024-10-22", "computer-use-2025-01-24", "computer-use-agentkit-2024-10-22", "computer-use-agentkit-2025-01-24"]
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -27,6 +28,16 @@ TOOL_GROUPS: list[ToolGroup] = [
         version="computer_use_20250124",
         tools=[ComputerTool20250124, EditTool20250124, BashTool20250124],
         beta_flag="computer-use-2025-01-24",
+    ),
+    ToolGroup(
+        version="computer_use_agentkit_20241022",
+        tools=[ComputerTool20241022, EditTool20241022, BashTool20241022, AgentKitTool20241022],
+        beta_flag="computer-use-agentkit-2024-10-22",
+    ),
+    ToolGroup(
+        version="computer_use_agentkit_20250124",
+        tools=[ComputerTool20250124, EditTool20250124, BashTool20250124, AgentKitTool20250124],
+        beta_flag="computer-use-agentkit-2025-01-24",
     ),
 ]
 

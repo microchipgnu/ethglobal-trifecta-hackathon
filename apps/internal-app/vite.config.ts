@@ -20,4 +20,14 @@ export default defineConfig({
   resolve: {
     dedupe: ['react', 'react-dom'],
   },
+  define: {
+    'import.meta.env.VITE_ADDRESS': JSON.stringify(process.env.ADDRESS),
+    'import.meta.env.VITE_RTMP_URL': JSON.stringify(process.env.RTMP_URL),
+    'import.meta.env.VITE_AGENT_PORT': JSON.stringify(process.env.AGENT_PORT),
+    'import.meta.env.VITE_AGENT_HOST': JSON.stringify(process.env.AGENT_HOST),
+    'import.meta.env.VITE_DOMAIN': JSON.stringify(process.env.DOMAIN),
+    'import.meta.env.VITE_TARGET_URL': JSON.stringify(process.env.TARGET_URL),
+    'import.meta.env.VITE_TARGET_VNC_PORT': JSON.stringify(process.env.TARGET_VNC_PORT),
+    'import.meta.env.VITE_TARGET_VNC_PATH': JSON.stringify(process.env.TARGET_VNC_PATH),
+  },
 }); 
