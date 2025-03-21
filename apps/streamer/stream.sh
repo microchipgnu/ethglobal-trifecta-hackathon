@@ -2,7 +2,7 @@
 
 RTMP_URL=${RTMP_URL:-"rtmp://localhost/live/stream"}
 TARGET_URL=${TARGET_URL:-"localhost"}
-TARGET_VNC_PORT=${TARGET_VNC_PORT:-"8080"}
+TARGET_VNC_PORT=${TARGET_VNC_PORT:-"6080"}
 TARGET_VNC_PATH=${TARGET_VNC_PATH:-"/vnc.html?autoconnect=true&view_only=true"}
 RESOLUTION=${RESOLUTION:-"1280x720"}
 VIDEO_BITRATE=${VIDEO_BITRATE:-"2500k"}

@@ -17,6 +17,43 @@ services:
       - traefik.http.routers.internal-app.tls.certResolver=letsencrypt
       - traefik.http.services.internal-app.loadbalancer.server.port=${INTERNAL_APP_PORT:-5173}
 
+  agent:
+    build:
+      context: .
+      dockerfile: ./apps/agent/Dockerfile
+    container_name: tradestream-agent
+    shm_size: 2g
+    ports:
+      - 8000:8000
+      - 6080:6080
+      - 8501:8501
+      - 5900:5900
+      - 8080:8080
+    restart: always
+    env_file: .env
+    networks:
+      - dokploy-network
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.computer-use-demo.rule=Host(`desktop.tradestream.${DOMAIN:-yourdomain.com}`)
+      - traefik.http.routers.computer-use-demo.entrypoints=websecure
+      - traefik.http.routers.computer-use-demo.tls.certResolver=letsencrypt
+      - traefik.http.services.computer-use-demo.loadbalancer.server.port=8080
+      - traefik.http.routers.computer-use-demo-streamlit.rule=Host(`desktop-app.tradestream.${DOMAIN:-yourdomain.com}`)
+      - traefik.http.routers.computer-use-demo-streamlit.entrypoints=websecure
+      - traefik.http.routers.computer-use-demo-streamlit.tls.certResolver=letsencrypt
+      - traefik.http.services.computer-use-demo-streamlit.loadbalancer.server.port=8501
+      - traefik.http.routers.computer-use-demo-vnc.rule=Host(`vnc.tradestream.${DOMAIN:-yourdomain.com}`)
+      - traefik.http.routers.computer-use-demo-vnc.entrypoints=websecure
+      - traefik.http.routers.computer-use-demo-vnc.tls.certResolver=letsencrypt
+      - traefik.http.services.computer-use-demo-vnc.loadbalancer.server.port=6080
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://0.0.0.0:6080/vnc.html"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
   streamer:
     build:
       context: .
@@ -27,6 +64,24 @@ services:
     env_file: .env
     networks:
       - dokploy-network
+    links:
+      - agent:agent
+      - rtmp-server:rtmp-server
+
+  rtmp-server:
+    image: tiangolo/nginx-rtmp
+    container_name: rtmp-server
+    ports:
+      - 1935:1935
+    restart: always
+    networks:
+      - dokploy-network
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.rtmp.rule=Host(`rtmp.tradestream.${DOMAIN:-yourdomain.com}`)
+      - traefik.http.routers.rtmp.entrypoints=websecure
+      - traefik.http.routers.rtmp.tls.certResolver=letsencrypt
+      - traefik.http.services.rtmp.loadbalancer.server.port=1935
 
 networks:
   dokploy-network:

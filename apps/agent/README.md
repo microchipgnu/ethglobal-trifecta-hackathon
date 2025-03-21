@@ -1,0 +1,1 @@
+> The code in this folder was taken from https://github.com/anthropics/anthropic-quickstarts/tree/main/computer-use-demo and adapted for our use case.
