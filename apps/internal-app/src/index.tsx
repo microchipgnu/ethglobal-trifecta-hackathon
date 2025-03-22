@@ -194,7 +194,7 @@ function AnimatedCounter() {
 }
 
 const VNC_HOST =
-  import.meta.env.VITE_NODE_ENV === 'production' ? 'agent' : 'localhost';
+  import.meta.env.VITE_NODE_ENV === 'production' ? 'computer' : 'localhost';
 
 function BitcoinChart() {
   const [price, setPrice] = useState<number | null>(null);
