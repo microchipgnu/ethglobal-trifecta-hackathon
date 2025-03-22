@@ -29,6 +29,7 @@
     "docker:build:redis": "docker compose build redis",
     "docker:build:internal-api": "docker compose build internal-api",
     "docker:build:next-app": "docker compose build next-app",
+    "docker:build:computer": "docker compose build computer",
     "docker:up": "docker compose up -d",
     "docker:up:app": "docker compose up -d internal-app",
     "docker:up:agent": "docker compose up -d agent",
@@ -38,6 +39,7 @@
     "docker:up:backend": "docker compose up -d agent streamer rtmp-server internal-api",
     "docker:up:redis": "docker compose up -d redis",
     "docker:up:next-app": "docker compose up -d next-app",
+    "docker:up:computer": "docker compose up -d computer",
     "docker:down": "docker compose down --remove-orphans",
     "docker:down:app": "docker compose stop internal-app && docker compose rm -f internal-app",
     "docker:down:agent": "docker compose stop agent && docker compose rm -f agent",
@@ -45,7 +47,8 @@
     "docker:down:rtmp": "docker compose stop rtmp-server && docker compose rm -f rtmp-server",
     "docker:down:redis": "docker compose stop redis && docker compose rm -f redis",
     "docker:down:internal-api": "docker compose stop internal-api && docker compose rm -f internal-api",
-    "docker:down:next-app": "docker compose stop next-app && docker compose rm -f next-app"
+    "docker:down:next-app": "docker compose stop next-app && docker compose rm -f next-app",
+    "docker:down:computer": "docker compose stop computer && docker compose rm -f computer"
   },
   "dependencies": {
     "viem": "^2.23.13"

@@ -29,12 +29,12 @@ services:
     networks:
       - dokploy-network
     links:
-      - agent:agent
+      - computer:computer
       - redis:redis
       - internal-api:internal-api
     depends_on:
-      agent:
-        condition: service_healthy
+      computer:
+        condition: service_started
       redis:
         condition: service_started
       internal-api:
@@ -75,50 +75,21 @@ services:
       retries: 3
       start_period: 15s
 
-  agent:
+  computer:
     build:
       context: .
-      dockerfile: ./apps/agent/Dockerfile
-    container_name: tradestream-agent
-    shm_size: 4g
+      dockerfile: ./apps/computer/Dockerfile
+    container_name: tradestream-computer
     ports:
-      - 8000:8000
-      - 6080:6080
-      - 8501:8501
       - 5900:5900
-      - 8080:8080
+      - 6080:6080
+    shm_size: 4g
     restart: always
     env_file: .env
     networks:
       - dokploy-network
-    links:
-      - redis:redis
-      - internal-api:internal-api
-    depends_on:
-      redis:
-        condition: service_started
-      internal-api:
-        condition: service_started
     labels:
       - traefik.enable=true
-      - traefik.http.routers.computer-use-demo.rule=Host(`desktop.tradestream.${DOMAIN:-yourdomain.com}`)
-      - traefik.http.routers.computer-use-demo.entrypoints=websecure
-      - traefik.http.routers.computer-use-demo.tls.certResolver=letsencrypt
-      - traefik.http.services.computer-use-demo.loadbalancer.server.port=8080
-      - traefik.http.routers.computer-use-demo-streamlit.rule=Host(`desktop-app.tradestream.${DOMAIN:-yourdomain.com}`)
-      - traefik.http.routers.computer-use-demo-streamlit.entrypoints=websecure
-      - traefik.http.routers.computer-use-demo-streamlit.tls.certResolver=letsencrypt
-      - traefik.http.services.computer-use-demo-streamlit.loadbalancer.server.port=8501
-      - traefik.http.routers.computer-use-demo-vnc.rule=Host(`vnc.tradestream.${DOMAIN:-yourdomain.com}`)
-      - traefik.http.routers.computer-use-demo-vnc.entrypoints=websecure
-      - traefik.http.routers.computer-use-demo-vnc.tls.certResolver=letsencrypt
-      - traefik.http.services.computer-use-demo-vnc.loadbalancer.server.port=6080
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://0.0.0.0:6080/vnc.html"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
 
   streamer:
     build:
@@ -131,14 +102,13 @@ services:
     networks:
       - dokploy-network
     links:
-      - agent:agent
       - rtmp-server:rtmp-server
       - internal-app:internal-app
       - internal-api:internal-api
       - redis:redis
     depends_on:
-      agent:
-        condition: service_healthy
+      computer:
+        condition: service_started
       rtmp-server:
         condition: service_started
       internal-app:
