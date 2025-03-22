@@ -3,7 +3,6 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
-  "packageManager": "bun@1.2.5",
   "workspaces": ["packages/*", "apps/*"],
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
@@ -53,5 +52,9 @@
     "docker:down:computer": "docker compose stop computer && docker compose rm -f computer",
     "docker:down:next-telegram-bots": "docker compose stop next-telegram-bots && docker compose rm -f next-telegram-bots"
   },
-  "trustedDependencies": ["@biomejs/biome"]
+  "trustedDependencies": ["@biomejs/biome"],
+  "packageManager": "bun@1.2.5",
+  "engines": {
+    "node": ">=20 <=22"
+  }
 }
