@@ -17,6 +17,13 @@ services:
       - traefik.http.routers.next-app.tls.certResolver=letsencrypt
       - traefik.http.services.next-app.loadbalancer.server.port=${NEXT_APP_PORT:-3069}
 
+  agent:
+    build:
+      context: .
+      dockerfile: ./apps/agent/Dockerfile
+    container_name: tradestream-agent
+    env_file: .env
+  
   internal-app:
     build:
       context: .
