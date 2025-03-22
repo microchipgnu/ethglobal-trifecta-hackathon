@@ -9,21 +9,22 @@
   --neon-green: #39ff14;
   --dark-bg: #0f0f12;
   --cyberpunk-grid: repeating-linear-gradient(
-    90deg,
-    rgba(255, 42, 109, 0.07) 0px,
-    rgba(255, 42, 109, 0) 1px,
-    rgba(255, 42, 109, 0) 30px
-  ),
-  repeating-linear-gradient(
-    0deg,
-    rgba(255, 42, 109, 0.07) 0px,
-    rgba(255, 42, 109, 0) 1px,
-    rgba(255, 42, 109, 0) 30px
-  );
+      90deg,
+      rgba(255, 42, 109, 0.07) 0px,
+      rgba(255, 42, 109, 0) 1px,
+      rgba(255, 42, 109, 0) 30px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 42, 109, 0.07) 0px,
+      rgba(255, 42, 109, 0) 1px,
+      rgba(255, 42, 109, 0) 30px
+    );
 }
 
 body {
-  font-family: "Rajdhani", "Orbitron", "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: "Rajdhani", "Orbitron", "Inter", -apple-system,
+    BlinkMacSystemFont, sans-serif;
   background-color: var(--dark-bg);
   color: #ffffff;
   line-height: 1.5;
@@ -102,7 +103,8 @@ body::before {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -176,20 +178,23 @@ body::before {
 }
 
 /* Progress bars */
-.h-2\.5, .h-2 {
+.h-2\.5,
+.h-2 {
   overflow: hidden;
   position: relative;
   background: rgba(15, 15, 18, 0.8);
   border: 1px solid rgba(255, 42, 109, 0.3);
 }
 
-.h-2\.5 div, .h-2 div {
+.h-2\.5 div,
+.h-2 div {
   transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
 }
 
-.h-2\.5 div::after, .h-2 div::after {
+.h-2\.5 div::after,
+.h-2 div::after {
   content: "";
   position: absolute;
   top: 0;

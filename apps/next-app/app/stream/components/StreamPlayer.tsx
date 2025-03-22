@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
 import Hls from 'hls.js';
+import { useEffect, useRef } from 'react';
 
 export default function StreamPlayer() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -12,26 +12,24 @@ export default function StreamPlayer() {
       // In production, you would use your actual stream URL
       const videoElement = videoRef.current;
       const rtpStreamUrl = 'http://localhost:8888/stream.m3u8'; // Replace with your RTP stream URL
-      
+
       try {
         if (Hls.isSupported()) {
           const hls = new Hls();
           hls.loadSource(rtpStreamUrl);
           hls.attachMedia(videoElement);
           hls.on(Hls.Events.MANIFEST_PARSED, () => {
-            videoElement.play()
-              .catch(error => {
-                console.error('Error playing video:', error);
-              });
+            videoElement.play().catch((error) => {
+              console.error('Error playing video:', error);
+            });
           });
         } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
           // For Safari which has native HLS support
           videoElement.src = rtpStreamUrl;
           videoElement.addEventListener('loadedmetadata', () => {
-            videoElement.play()
-              .catch(error => {
-                console.error('Error playing video:', error);
-              });
+            videoElement.play().catch((error) => {
+              console.error('Error playing video:', error);
+            });
           });
         } else {
           console.error('HLS is not supported by your browser');
@@ -57,8 +55,10 @@ export default function StreamPlayer() {
       </div>
       <div className="p-4 bg-gray-100 rounded-b-lg">
         <h1 className="text-2xl font-bold">Live Stream</h1>
-        <p className="text-gray-600 mt-1">Welcome to the live stream! Chat with other viewers in the sidebar.</p>
+        <p className="text-gray-600 mt-1">
+          Welcome to the live stream! Chat with other viewers in the sidebar.
+        </p>
       </div>
     </div>
   );
-} 
+}

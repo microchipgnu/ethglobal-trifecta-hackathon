@@ -8,11 +8,11 @@ const router = express.Router();
 router.get('/data/:key', async (req: Request, res: Response) => {
   try {
     const { key } = req.params;
-    
+
     if (!key) {
       return res.status(400).json({ error: 'Key parameter is required' });
     }
-    
+
     const data = await redisClient.get(key);
     res.json({ data: data || 'No data found' });
   } catch (error) {
@@ -41,7 +41,7 @@ router.post('/data', async (req: Request, res: Response) => {
 });
 
 // Route that appends data to an existing string in Redis
- router.post('/data/:key/append', async (req: Request, res: Response) => {
+router.post('/data/:key/append', async (req: Request, res: Response) => {
   try {
     const { key } = req.params;
     const { value, maxItems } = req.body;
@@ -53,7 +53,7 @@ router.post('/data', async (req: Request, res: Response) => {
     // Get existing data
     const existingData = await redisClient.get(key);
     let dataArray = [];
-    
+
     if (existingData) {
       try {
         dataArray = JSON.parse(existingData);
@@ -65,23 +65,25 @@ router.post('/data', async (req: Request, res: Response) => {
         dataArray = [existingData];
       }
     }
-    
+
     // Add new value to the beginning (most recent first)
     dataArray.unshift(value);
-    
+
     // Limit to maxItems if specified (keep most recent items)
     if (maxItems && typeof maxItems === 'number' && maxItems > 0) {
       dataArray = dataArray.slice(0, maxItems);
     }
-    
+
     // Store the updated array
     await redisClient.set(key, JSON.stringify(dataArray));
-    
-    res.status(200).json({ 
-      success: true, 
-      message: 'Data appended successfully', 
+
+    res.status(200).json({
+      success: true,
+      message: 'Data appended successfully',
       newLength: dataArray.length,
-      itemsKept: maxItems ? Math.min(maxItems, dataArray.length) : dataArray.length
+      itemsKept: maxItems
+        ? Math.min(maxItems, dataArray.length)
+        : dataArray.length,
     });
   } catch (error) {
     console.error('Error appending data:', error);
@@ -100,10 +102,10 @@ router.post('/data/:key/increment', async (req: Request, res: Response) => {
     }
 
     const newValue = await redisClient.incrBy(key, by);
-    res.status(200).json({ 
-      success: true, 
-      message: 'Value incremented successfully', 
-      newValue 
+    res.status(200).json({
+      success: true,
+      message: 'Value incremented successfully',
+      newValue,
     });
   } catch (error) {
     console.error('Error incrementing value:', error);
@@ -122,10 +124,10 @@ router.post('/data/:key/decrement', async (req: Request, res: Response) => {
     }
 
     const newValue = await redisClient.decrBy(key, by);
-    res.status(200).json({ 
-      success: true, 
-      message: 'Value decremented successfully', 
-      newValue 
+    res.status(200).json({
+      success: true,
+      message: 'Value decremented successfully',
+      newValue,
     });
   } catch (error) {
     console.error('Error decrementing value:', error);
@@ -147,9 +149,9 @@ router.post('/data/expire', async (req: Request, res: Response) => {
     }
 
     await redisClient.setEx(key, expireSeconds, JSON.stringify(value));
-    res.status(201).json({ 
-      success: true, 
-      message: 'Data stored with expiration successfully' 
+    res.status(201).json({
+      success: true,
+      message: 'Data stored with expiration successfully',
     });
   } catch (error) {
     console.error('Error storing data with expiration:', error);
@@ -161,15 +163,15 @@ router.post('/data/expire', async (req: Request, res: Response) => {
 router.delete('/data/:key', async (req: Request, res: Response) => {
   try {
     const { key } = req.params;
-    
+
     if (!key) {
       return res.status(400).json({ error: 'Key parameter is required' });
     }
-    
+
     const deleted = await redisClient.del(key);
-    res.json({ 
-      success: true, 
-      message: deleted ? 'Key deleted successfully' : 'Key not found' 
+    res.json({
+      success: true,
+      message: deleted ? 'Key deleted successfully' : 'Key not found',
     });
   } catch (error) {
     console.error('Error deleting key:', error);
@@ -181,12 +183,14 @@ router.delete('/data/:key', async (req: Request, res: Response) => {
 router.get('/last-used-tools', async (req: Request, res: Response) => {
   try {
     // Get the limit parameter from query string or default to 10
-    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
-    
+    const limit = req.query.limit
+      ? Number.parseInt(req.query.limit as string, 10)
+      : 10;
+
     // Get data from Redis
     const data = await redisClient.get('last_used_tools');
     let toolsArray = [];
-    
+
     if (data) {
       try {
         toolsArray = JSON.parse(data);
@@ -198,14 +202,14 @@ router.get('/last-used-tools', async (req: Request, res: Response) => {
         return res.status(500).json({ error: 'Invalid data format' });
       }
     }
-    
+
     // Return only the requested number of items
     const limitedTools = toolsArray.slice(0, limit);
-    
-    res.json({ 
+
+    res.json({
       tools: limitedTools,
       total: toolsArray.length,
-      limit
+      limit,
     });
   } catch (error) {
     console.error('Error fetching last used tools:', error);
