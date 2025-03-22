@@ -18,8 +18,6 @@ RUN bun install
 # Build the Next.js application
 RUN bun run --cwd apps/next-telegram-bots build
 
-RUN bun run --cwd apps/next-telegram-bots reset-webhooks
-
 # Set env variables and expose the port
 ENV HOST="0.0.0.0"
 ENV PORT="3420"
