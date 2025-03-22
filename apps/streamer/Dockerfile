@@ -1,19 +1,23 @@
 FROM debian:bullseye
 
-# Update and install necessary packages
-RUN apt-get update && apt-get install -y \
-    wget \
-    curl \
-    gnupg2 \
-    software-properties-common \
-    xvfb \
-    ffmpeg \
-    pulseaudio \
-    chromium \
-    xdotool \
-    bc \
-    gawk \
-    && rm -rf /var/lib/apt/lists/*
+# Update and install in smaller groups with retry mechanism
+RUN apt-get update && apt-get install -y --no-install-recommends wget curl gnupg2 software-properties-common && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install X11 related packages
+RUN apt-get update && apt-get install -y --no-install-recommends --fix-missing xvfb && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install media packages - retry if needed
+RUN for i in $(seq 1 3); do \
+        apt-get update && apt-get install -y --no-install-recommends --fix-missing ffmpeg pulseaudio && \
+        rm -rf /var/lib/apt/lists/* && break || \
+        if [ $i -lt 3 ]; then sleep 5; fi; \
+    done
+
+# Install remaining packages
+RUN apt-get update && apt-get install -y --no-install-recommends --fix-missing chromium xdotool bc gawk && \
+    rm -rf /var/lib/apt/lists/*
 
 # Set up environment variables
 ENV DISPLAY=:99
