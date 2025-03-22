@@ -1,7 +1,6 @@
-import React from 'react';
 import { PulsatingButton } from '@/app/components/ui/pulsating-button';
 
-const Hero = () => {
+export const Hero = () => {
   return (
     <div className="w-full relative flex flex-col items-center justify-between space-y-4 backdrop-blur-sm bg-card/75 border border-muted/30 p-5 rounded-lg">
       <div className="w-full space-y-2">
@@ -33,7 +32,7 @@ const Hero = () => {
 
       <a
         className="w-full flex justify-center items-center"
-        href="https://midcurve.live"
+        href="https://t.me/midcurvelive"
         target="_blank"
         rel="noopener noreferrer"
       >
@@ -44,5 +43,3 @@ const Hero = () => {
     </div>
   );
 };
-
-export default Hero;

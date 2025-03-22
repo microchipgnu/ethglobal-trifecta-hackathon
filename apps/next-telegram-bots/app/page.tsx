@@ -1,42 +1,42 @@
-import Hero from './components/hero';
-import HowToParticipate from './components/how-to-participate';
-export const metadata = {
-  title: 'W3GPT Telegram Agents',
-  description: 'W3GPT Agents',
+import type { Metadata } from 'next';
+import { Hero } from './components/hero';
+import { HowToParticipate } from './components/how-to-participate';
+import { StreamPlayer } from './components/stream-player';
+
+export const metadata: Metadata = {
+  title: 'Midcurve.live',
+  description: 'Midcurve.live Telegram Bots',
 };
 
-export default async function Page({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
-
+export default function Page() {
   return (
     <main
       className="min-h-screen text-white"
       style={{
-        background: 'linear-gradient(to bottom, #f0f4ff, #e6eeff, #d9e6ff)',
-        color: '#333',
+        background: 'linear-gradient(to bottom, #1E2030, #2A3A5E)',
       }}
     >
       <div className="flex flex-col w-full md:w-7/8 min-h-screen mx-auto p-2 justify-between items-center space-y-8">
-        <div className="p-12">
+        <div className="pt-6 md:pt-12">
           <img
-            src="/midcurve-diagram.webp"
-            alt="X"
-            className="h-16 w-auto transition-transform duration-1000 animate__fadeInDown"
+            src="/midcurve-diagram-banner-wide.png"
+            alt="Midcurve.live"
+            className="h-16 md:h-32 w-auto"
           />
         </div>
 
-        <div />
+        {/* Main Stream Player Section */}
+        <div className="w-full max-w-4xl">
+          <StreamPlayer />
+        </div>
+
         <Hero />
         <HowToParticipate />
 
-        <div className="w-full p-5 gap-5 flex flex-col md:flex-row justify-between items-center transition-transform duration-1000 animate__fadeInUp space-y-8 md:space-y-0">
+        <div className="w-full p-5 gap-5 flex flex-col md:flex-row justify-between items-center space-y-8 md:space-y-0">
           <div className="flex space-x-4">
             <a
-              href="https://x.com/0xSoko"
+              href="https://x.com/microchipgnu"
               target="_blank"
               rel="noopener noreferrer"
             >

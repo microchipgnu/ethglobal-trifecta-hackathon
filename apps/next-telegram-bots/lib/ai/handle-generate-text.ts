@@ -15,7 +15,7 @@ import { GPT4o, getTools } from '@/lib/config';
 import { agentService, chatService, messageService } from '@/lib/services';
 import type { SessionData } from '@/lib/telegram/types';
 
-const MIDCURVE_CHAT_ID = -1335957680;
+const MIDCURVE_CHAT_ID = -1002596130117;
 
 export const handleGenerateText = async ({
   chatId,

@@ -3,7 +3,7 @@
 import Hls from 'hls.js';
 import { useEffect, useRef } from 'react';
 
-export default function StreamPlayer() {
+export default function HlsPlayer() {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -41,24 +41,14 @@ export default function StreamPlayer() {
   }, []);
 
   return (
-    <div className="h-full w-full flex flex-col">
-      <div className="relative w-full h-0 pb-[56.25%] bg-black">
-        <video
-          ref={videoRef}
-          className="absolute top-0 left-0 w-full h-full"
-          controls
-          muted
-          playsInline
-        >
-          Your browser does not support the video tag.
-        </video>
-      </div>
-      <div className="p-4 bg-gray-100 rounded-b-lg">
-        <h1 className="text-2xl font-bold">Live Stream</h1>
-        <p className="text-gray-600 mt-1">
-          Welcome to the live stream! Chat with other viewers in the sidebar.
-        </p>
-      </div>
-    </div>
+    <video
+      ref={videoRef}
+      className="absolute top-0 left-0 w-full h-full"
+      controls
+      muted
+      playsInline
+    >
+      Your browser does not support the video tag.
+    </video>
   );
 }

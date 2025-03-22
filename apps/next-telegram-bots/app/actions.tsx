@@ -53,8 +53,6 @@ export async function checkDepositStatus(connectedWallet?: string) {
     // Find user by the connected wallet address
     const existingUser = await service.findUserByEvmAddress(connectedWallet);
 
-    console.log('existingUser', existingUser);
-
     if (!existingUser) {
       console.log('User not found or address not linked');
       return false;
@@ -108,7 +106,7 @@ export async function updateUserAction(formData: FormData) {
     console.log('existingUser', existingUser);
 
     if (existingUser.evmAddress) {
-      return { success: false, message: 'Address already linked' };
+      return { success: true, message: 'Address already linked' };
     }
 
     // Update user with simplified query
@@ -208,16 +206,3 @@ export async function updateUserDeposit(
     return { success: false, message: 'Failed to update user deposit' };
   }
 }
-
-// export async function checkUserVerified(connected: string): Promise<boolean> {
-//   try {
-//     const service = await userService();
-//     const user = await service.findUserByEvmAddress
-//     const user = await service.findUserByEvmAddress(evmAddress);
-
-//     return !!user;
-//   } catch (error) {
-//     console.error("Error checking if user is registered:", error);
-//     return false;
-//   }
-// }

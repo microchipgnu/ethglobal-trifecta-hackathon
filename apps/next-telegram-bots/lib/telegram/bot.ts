@@ -51,7 +51,9 @@ const RATE_LIMIT_MESSAGES = [
   "I've seen better strategies from people buying at ATH, @{username} 📉",
   'Are you trying to DOS me, @{username}? My bags are heavier than your attacks 💰',
 ];
-
+if (!REDIS_URL) {
+  throw new Error('REDIS_URL is not set');
+}
 const redis = new Redis(REDIS_URL);
 
 const getTooManyRequestsReplyMessage = (username: string) => {

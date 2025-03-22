@@ -1,21 +1,21 @@
 services:
-  next-app:
+  next-telegram-bots:
     build:
       context: .
-      dockerfile: ./apps/next-app/Dockerfile
-    container_name: tradestream-next-app
+      dockerfile: ./apps/next-telegram-bots/Dockerfile
+    container_name: tradestream-next-telegram-bots
     env_file: .env
     ports:
-      - "${NEXT_APP_PORT:-3069}:3069"
+      - "${NEXT_TELEGRAM_BOTS_PORT:-3420}:3420"
     restart: always
     networks:
       - dokploy-network
     labels:
       - traefik.enable=true
-      - traefik.http.routers.next-app.rule=Host(`tradestream.${DOMAIN:-localhost}`)
-      - traefik.http.routers.next-app.entrypoints=websecure
-      - traefik.http.routers.next-app.tls.certResolver=letsencrypt
-      - traefik.http.services.next-app.loadbalancer.server.port=${NEXT_APP_PORT:-3069}
+      - traefik.http.routers.next-telegram-bots.rule=Host(`tradestream.${DOMAIN:-localhost}`)
+      - traefik.http.routers.next-telegram-bots.entrypoints=websecure
+      - traefik.http.routers.next-telegram-bots.tls.certResolver=letsencrypt
+      - traefik.http.services.next-telegram-bots.loadbalancer.server.port=${NEXT_TELEGRAM_BOTS_PORT:-3420}
 
   agent:
     build:
@@ -82,7 +82,13 @@ services:
       - traefik.http.routers.internal-api.tls.certResolver=letsencrypt
       - traefik.http.services.internal-api.loadbalancer.server.port=${INTERNAL_API_PORT:-3030}
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://0.0.0.0:${INTERNAL_API_PORT:-3030}/health"]
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "http://0.0.0.0:${INTERNAL_API_PORT:-3030}/health",
+        ]
       interval: 10s
       timeout: 5s
       retries: 3
