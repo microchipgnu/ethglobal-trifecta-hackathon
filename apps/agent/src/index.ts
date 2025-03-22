@@ -1,8 +1,4 @@
-// Main agent entry point
-
 import { VNCComputer } from "./computers/vnc";
-import * as fs from 'fs';
-import * as path from 'path';
 
 // Parse command line arguments
 function parseArgs() {
@@ -52,41 +48,40 @@ const main = async () => {
         await computer.initialize();
         console.log("VNC connection initialized successfully");
 
-        console.log("Taking screenshot...");
-        const screenshot = await computer.screenshot();
+        // Keep the connection open in a loop
+        let running = true;
         
-        // Print just the first part of the screenshot base64 data to avoid flooding console
-        if (screenshot) {
-            console.log(`Screenshot taken successfully (${screenshot.length} bytes)`);
-            console.log(`Data preview: ${screenshot}`);
-            
-            // Save to file (optional)
-            if (screenshot.length > 0) {
-                const filename = path.join(process.cwd(), 'vnc-screenshot.png');
-                
-                // Check the format of the data
-                if (screenshot.startsWith('data:image/raw;base64,')) {
-                    // Handle raw pixel data - we'll save it as a binary file instead of PNG
-                    const rawFilename = path.join(process.cwd(), 'vnc-screenshot.raw');
-                    const base64Data = screenshot.replace(/^data:image\/raw;base64,/, "");
-                    fs.writeFileSync(rawFilename, Buffer.from(base64Data, 'base64'));
-                    console.log(`Raw screenshot saved to: ${rawFilename}`);
-                } else {
-                    // Regular PNG or other image format
-                    const base64Data = screenshot.replace(/^data:image\/\w+;base64,/, "");
-                    fs.writeFileSync(filename, Buffer.from(base64Data, 'base64'));
-                    console.log(`Screenshot saved to: ${filename}`);
-                }
-            }
-        } else {
-            console.log("Screenshot is empty");
-        }
+        // Handle graceful shutdown
+        process.on('SIGINT', () => {
+            console.log('Received SIGINT, shutting down...');
+            running = false;
+        });
+        
+        process.on('SIGTERM', () => {
+            console.log('Received SIGTERM, shutting down...');
+            running = false;
+        });
 
-        // Example of other interactions you could do
-        // await computer.click(100, 100);
-        // await computer.type("Hello World");
+        while (running) {
+            try {
+                console.log("Running agent tasks...");
+                
+                // console.log("Taking screenshot...");
+                const screenshot = await computer.screenshot();
+                console.log(screenshot);
+                
+                // Wait before next iteration
+                console.log("Waiting for next iteration...");
+                await new Promise(resolve => setTimeout(resolve, 5000));
+            } catch (error) {
+                console.error("Error during agent task execution:", error);
+                // Wait a bit before retrying
+                await new Promise(resolve => setTimeout(resolve, 10000));
+            }
+        }
         
-        console.log("Agent finished successfully");
+        console.log("Agent loop terminated");
+        
     } catch (error) {
         console.error("Error in agent:", error);
     } finally {

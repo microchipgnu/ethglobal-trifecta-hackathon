@@ -112,8 +112,12 @@ export class VNCComputer implements Computer {
         console.log(`Received raw rect: ${x},${y} ${width}x${height} with ${data.length} bytes of data`);
         
         // Store the raw data for screenshot functionality
-        this.frameBuffer = data;
-        this.frameReceived = true;
+        // If this is a full-screen update or large enough, use it for the frame buffer
+        if (x === 0 && y === 0 && width === this.dimensions[0] && height === this.dimensions[1]) {
+            console.log("Received full-screen update, storing as frame buffer");
+            this.frameBuffer = Buffer.from(data); // Make a copy to ensure we have a proper buffer
+            this.frameReceived = true;
+        }
     }
 
     private requestScreenUpdate(incremental: boolean = true) {
@@ -144,12 +148,6 @@ export class VNCComputer implements Computer {
             // Request full (non-incremental) screen update
             this.client.requestUpdate(false, 0, 0, this.dimensions[0], this.dimensions[1]);
             
-            // Create a simple text-based dummy image in case we need it
-            const createDummyResponse = () => {
-                console.log("Creating dummy screen response");
-                return `data:text/plain;base64,${Buffer.from('VNC Connection Active - No Frame Data').toString('base64')}`;
-            };
-            
             // Wait for frame update with timeout
             const maxWaitTime = 5000; // 5 seconds max
             const startTime = Date.now();
@@ -160,18 +158,159 @@ export class VNCComputer implements Computer {
             
             if (!this.frameBuffer || !this.frameReceived) {
                 console.error("Failed to receive frame buffer data");
-                return createDummyResponse();
+                return this.createDummyImage();
             }
             
             console.log(`Got frame buffer of size: ${this.frameBuffer.length} bytes`);
             
-            // Just return the raw buffer as base64
-            const base64Data = this.frameBuffer.toString('base64');
-            return `data:image/raw;base64,${base64Data}`;
+            // Convert the raw RGB buffer to a PNG using Bun-compatible approaches
+            return await this.convertFrameBufferToImage(this.frameBuffer);
         } catch (error) {
             console.error('Screenshot error:', error);
-            return "";
+            return this.createDummyImage();
         }
+    }
+
+    private createDummyImage(): string {
+        console.log("Creating dummy screen response");
+        return Buffer.from('VNC Connection Active - No Frame Data').toString('base64');
+    }
+
+    private async convertFrameBufferToImage(buffer: Buffer): Promise<string> {
+        try {
+            // Create a simple PNG encoder without external dependencies
+            // PNG format: https://www.w3.org/TR/PNG/
+            
+            const width = this.dimensions[0];
+            const height = this.dimensions[1];
+            
+            // PNG signature
+            const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+            
+            // IHDR chunk (image header)
+            const IHDR = Buffer.alloc(13);
+            // Width (4 bytes)
+            IHDR.writeUInt32BE(width, 0);
+            // Height (4 bytes)
+            IHDR.writeUInt32BE(height, 4);
+            // Bit depth (1 byte) - 8 bits per channel
+            IHDR[8] = 8;
+            // Color type (1 byte) - 6 means RGBA
+            IHDR[9] = 6;
+            // Compression method (1 byte) - 0 means zlib
+            IHDR[10] = 0;
+            // Filter method (1 byte) - 0 means adaptive filtering
+            IHDR[11] = 0;
+            // Interlace method (1 byte) - 0 means no interlace
+            IHDR[12] = 0;
+            
+            const IHDRChunk = this.createPNGChunk('IHDR', IHDR);
+            
+            // Convert VNC's BGR format to RGBA format for PNG
+            const pixelData = Buffer.alloc(width * height * 4 + height); // +height for filter byte per scanline
+            
+            let pixelPos = 0;
+            for (let y = 0; y < height; y++) {
+                // Add filter byte (0) at the beginning of each scanline
+                pixelData[pixelPos++] = 0;
+                
+                for (let x = 0; x < width; x++) {
+                    const srcPos = (y * width + x) * 4;
+                    
+                    // VNC uses BGR format, we need to convert to RGBA
+                    if (srcPos + 2 < buffer.length) {
+                        pixelData[pixelPos++] = buffer[srcPos + 2] || 0;  // R (from B)
+                        pixelData[pixelPos++] = buffer[srcPos + 1] || 0;  // G (from G)
+                        pixelData[pixelPos++] = buffer[srcPos] || 0;      // B (from R)
+                        pixelData[pixelPos++] = 255;                      // Alpha (full opacity)
+                    } else {
+                        // Fill with black if we're out of bounds
+                        pixelData[pixelPos++] = 0;  // R
+                        pixelData[pixelPos++] = 0;  // G
+                        pixelData[pixelPos++] = 0;  // B
+                        pixelData[pixelPos++] = 255; // Alpha
+                    }
+                }
+            }
+            
+            // Compress the pixel data using zlib
+            const compressedData = require('zlib').deflateSync(pixelData);
+            
+            // IDAT chunk (image data)
+            const IDATChunk = this.createPNGChunk('IDAT', compressedData);
+            
+            // IEND chunk (image end)
+            const IENDChunk = this.createPNGChunk('IEND', Buffer.alloc(0));
+            
+            // Combine all chunks to create the PNG file
+            const pngBuffer = Buffer.concat([
+                signature,
+                IHDRChunk,
+                IDATChunk,
+                IENDChunk
+            ]);
+            
+            return `data:image/png;base64,${pngBuffer.toString('base64')}`;
+        } catch (error) {
+            console.error('Error converting frame buffer to image:', error);
+            return Buffer.from('Error converting image').toString('base64');
+        }
+    }
+    
+    private createPNGChunk(type: string, data: Buffer): Buffer {
+        // Chunk structure: Length (4 bytes) + Type (4 bytes) + Data (Length bytes) + CRC (4 bytes)
+        const typeBuffer = Buffer.from(type);
+        const length = data.length;
+        
+        const chunk = Buffer.alloc(length + 12);
+        
+        // Write length (4 bytes)
+        chunk.writeUInt32BE(length, 0);
+        
+        // Write type (4 bytes)
+        typeBuffer.copy(chunk, 4);
+        
+        // Write data
+        data.copy(chunk, 8);
+        
+        // Calculate CRC
+        const crcData = Buffer.alloc(4 + length);
+        typeBuffer.copy(crcData, 0);
+        data.copy(crcData, 4);
+        
+        const crc = this.calculateCRC32(crcData);
+        chunk.writeInt32BE(crc, length + 8);
+        
+        return chunk;
+    }
+    
+    private calculateCRC32(data: Buffer): number {
+        let crc = 0xffffffff;
+        const crcTable = this.getCRC32Table();
+        
+        for (let i = 0; i < data.length; i++) {
+            const index = (crc ^ data[i]!) & 0xff;
+            const tableValue = crcTable[index];
+            if (tableValue !== undefined) {
+                crc = tableValue ^ (crc >>> 8);
+            }
+        }
+        
+        return crc ^ 0xffffffff;
+    }
+    
+    private getCRC32Table(): Uint32Array {
+        const table = new Uint32Array(256);
+        
+        for (let i = 0; i < 256; i++) {
+            let c = i;
+            for (let j = 0; j < 8; j++) {
+                c = ((c & 1) ? 0xedb88320 : 0) ^ (c >>> 1);
+            }
+            table[i] = c;
+        }
+        
+        return table;
     }
 
     async click(x: number, y: number, button: string = 'left'): Promise<void> {

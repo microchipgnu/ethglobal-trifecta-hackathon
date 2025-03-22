@@ -103,11 +103,14 @@ services:
       - dokploy-network
     labels:
       - traefik.enable=true
-      - traefik.http.routers.computer.rule=Host(`computer.tradestream.${DOMAIN:-localhost}`)
-      - traefik.http.routers.computer.entrypoints=websecure
-      - traefik.http.routers.computer.tls.certResolver=letsencrypt
-      - traefik.http.services.computer.loadbalancer.server.port=5900
-      - traefik.http.services.computer.loadbalancer.server.port=6080
+      - traefik.http.routers.computer-vnc.rule=Host(`vnc.computer.tradestream.${DOMAIN:-localhost}`)
+      - traefik.http.routers.computer-vnc.entrypoints=websecure
+      - traefik.http.routers.computer-vnc.tls.certResolver=letsencrypt
+      - traefik.http.services.computer-vnc.loadbalancer.server.port=5900
+      - traefik.http.routers.computer-novnc.rule=Host(`computer.tradestream.${DOMAIN:-localhost}`)
+      - traefik.http.routers.computer-novnc.entrypoints=websecure
+      - traefik.http.routers.computer-novnc.tls.certResolver=letsencrypt
+      - traefik.http.services.computer-novnc.loadbalancer.server.port=6080
 
   streamer:
     build:
