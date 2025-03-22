@@ -421,7 +421,7 @@ export class VNCComputer implements Computer {
         if (!this.client || !this.connected) return;
         
         // Map special keys to keycodes
-        const keyCodes = keys.map(key => this.keyToKeySym(key));
+        const keyCodes = keys.map(key => this.keyToKeySym(key.toLowerCase()));
         
         // Press all keys
         for (const keyCode of keyCodes) {
@@ -449,33 +449,34 @@ export class VNCComputer implements Computer {
     private keyToKeySym(key: string): number {
         // Map of special keys to their VNC keycodes
         const keyMap: {[key: string]: number} = {
-            'Enter': 0xff0d,
-            'Tab': 0xff09,
-            'Escape': 0xff1b,
-            'Backspace': 0xff08,
-            'Control': 0xffe3,
-            'Alt': 0xffe9,
-            'Shift': 0xffe1,
-            'ArrowUp': 0xff52,
-            'ArrowDown': 0xff54,
-            'ArrowLeft': 0xff51,
-            'ArrowRight': 0xff53,
-            'Home': 0xff50,
-            'End': 0xff57,
-            'PageUp': 0xff55,
-            'PageDown': 0xff56,
-            'F1': 0xffbe,
-            'F2': 0xffbf,
-            'F3': 0xffc0,
-            'F4': 0xffc1,
-            'F5': 0xffc2,
-            'F6': 0xffc3,
+            'enter': 0xff0d,
+            'space': 0x0020,
+            'tab': 0xff09,
+            'escape': 0xff1b,
+            'backspace': 0xff08,
+            'ctrl': 0xffe3,
+            'alt': 0xffe9,
+            'shift': 0xffe1,
+            'arrowup': 0xff52,
+            'arrowdown': 0xff54,
+            'arrowleft': 0xff51,
+            'arrowright': 0xff53,
+            'home': 0xff50,
+            'end': 0xff57,
+            'pageup': 0xff55,
+            'pagedown': 0xff56,
+            'f1': 0xffbe,
+            'f2': 0xffbf,
+            'f3': 0xffc0,
+            'f4': 0xffc1,
+            'f5': 0xffc2,
+            'f6': 0xffc3,
             'F7': 0xffc4,
             'F8': 0xffc5,
-            'F9': 0xffc6,
-            'F10': 0xffc7,
-            'F11': 0xffc8,
-            'F12': 0xffc9,
+            'f9': 0xffc6,
+            'f10': 0xffc7,
+            'f11': 0xffc8,
+            'f12': 0xffc9,
         };
         
         return keyMap[key] || key.charCodeAt(0);
