@@ -1,4 +1,22 @@
 services:
+  next-app:
+    build:
+      context: .
+      dockerfile: ./apps/next-app/Dockerfile
+    container_name: tradestream-next-app
+    env_file: .env
+    ports:
+      - "${NEXT_APP_PORT:-3069}:3069"
+    restart: always
+    networks:
+      - dokploy-network
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.next-app.rule=Host(`tradestream.${DOMAIN:-localhost}`)
+      - traefik.http.routers.next-app.entrypoints=websecure
+      - traefik.http.routers.next-app.tls.certResolver=letsencrypt
+      - traefik.http.services.next-app.loadbalancer.server.port=${NEXT_APP_PORT:-3069}
+
   internal-app:
     build:
       context: .
