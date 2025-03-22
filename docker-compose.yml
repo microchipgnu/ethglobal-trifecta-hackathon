@@ -17,6 +17,19 @@ services:
       - traefik.http.routers.next-telegram-bots.tls.certResolver=letsencrypt
       - traefik.http.services.next-telegram-bots.loadbalancer.server.port=${NEXT_TELEGRAM_BOTS_PORT:-3420}
 
+  agent:
+    build:
+      context: .
+      dockerfile: ./apps/agent/Dockerfile
+    container_name: tradestream-agent
+    env_file: .env
+    links:
+      - computer:computer
+    networks:
+      - dokploy-network
+    labels:
+      - traefik.enable=true
+  
   internal-app:
     build:
       context: .
@@ -96,6 +109,14 @@ services:
       - dokploy-network
     labels:
       - traefik.enable=true
+      - traefik.http.routers.computer-vnc.rule=Host(`vnc.computer.tradestream.${DOMAIN:-localhost}`)
+      - traefik.http.routers.computer-vnc.entrypoints=websecure
+      - traefik.http.routers.computer-vnc.tls.certResolver=letsencrypt
+      - traefik.http.services.computer-vnc.loadbalancer.server.port=5900
+      - traefik.http.routers.computer-novnc.rule=Host(`computer.tradestream.${DOMAIN:-localhost}`)
+      - traefik.http.routers.computer-novnc.entrypoints=websecure
+      - traefik.http.routers.computer-novnc.tls.certResolver=letsencrypt
+      - traefik.http.services.computer-novnc.loadbalancer.server.port=6080
 
   streamer:
     build:

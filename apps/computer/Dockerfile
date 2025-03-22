@@ -50,7 +50,7 @@ EXPOSE 5900 6080
 # 8) Run Xvfb, x11vnc, Xfce, and noVNC
 CMD ["/bin/sh", "-c", "\
     Xvfb :99 -screen 0 1280x800x24 >/dev/null 2>&1 & \
-    x11vnc -display :99 -forever -nopw -listen 0.0.0.0 -rfbport 5900 >/dev/null 2>&1 & \
+    x11vnc -display :99 -forever -nopw -listen 0.0.0.0 -rfbport 5900 -shared >/dev/null 2>&1 & \
     export DISPLAY=:99 && \
     startxfce4 >/dev/null 2>&1 & \
     /home/myuser/novnc_startup.sh & \

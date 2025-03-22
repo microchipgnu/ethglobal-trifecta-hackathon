@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "dotenv -e ../../.env -- next dev",
     "build": "dotenv -e ../../.env -- next build",
-    "start": "bun run --cwd lib/telegram/reset-webhooks.ts && dotenv -e ../../.env -- next start",
+    "start": "dotenv -e ../../.env -- next start",
     "reset-webhooks": "dotenv -e ../../.env -- bun lib/telegram/reset-webhooks.ts",
     "test": "dotenv -e ../../.env -- bun test"
   },
