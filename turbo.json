@@ -22,6 +22,9 @@
     },
     "stop": {
       "cache": false
+    },
+    "clean": {
+      "cache": false
     }
   }
 }

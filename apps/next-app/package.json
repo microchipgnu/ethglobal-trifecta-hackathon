@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "dotenv -e ../../.env -- next dev",
     "build": "dotenv -e ../../.env -- next build",
-    "start": "dotenv -e ../../.env -- next start"
+    "start": "dotenv -e ../../.env -- next start",
+    "clean": "rm -rf .next node_modules"
   },
   "dependencies": {
     "@privy-io/react-auth": "^2.6.4",

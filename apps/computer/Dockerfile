@@ -47,14 +47,36 @@ RUN chmod +x /home/myuser/novnc_startup.sh
 # 7) Expose VNC and noVNC ports
 EXPOSE 5900 6080
 
-# 8) Run Xvfb, x11vnc, Xfce, and noVNC
+# 8) Run Xvfb, x11vnc, Xfce, and noVNC with proper process management
 CMD ["/bin/sh", "-c", "\
-    Xvfb :99 -screen 0 1280x800x24 >/dev/null 2>&1 & \
-    x11vnc -display :99 -forever -nopw -listen 0.0.0.0 -rfbport 5900 >/dev/null 2>&1 & \
-    export DISPLAY=:99 && \
-    startxfce4 >/dev/null 2>&1 & \
+    # Start Xvfb \
+    Xvfb :98 -screen 0 1280x800x24 & \
+    XVFB_PID=$! \
+    \
+    # Wait for Xvfb to be ready \
+    sleep 2 \
+    \
+    # Start x11vnc \
+    x11vnc -display :98 -forever -nopw -listen 0.0.0.0 -rfbport 5900 & \
+    VNC_PID=$! \
+    \
+    # Set display for Xfce \
+    export DISPLAY=:98 \
+    \
+    # Start Xfce \
+    startxfce4 & \
+    XFCE_PID=$! \
+    \
+    # Start noVNC once \
     /home/myuser/novnc_startup.sh & \
-    sleep 2 && echo 'Container running!' && \
-    tail -f /dev/null \
+    NOVNC_PID=$! \
+    \
+    echo 'Container running!' \
+    \
+    # Wait for any process to exit \
+    wait -n \
+    \
+    # Exit with status of process that exited first \
+    exit $? \
 "]
 

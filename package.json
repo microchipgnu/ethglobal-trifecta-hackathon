@@ -5,6 +5,10 @@
   "private": true,
   "packageManager": "bun@1.2.5",
   "workspaces": ["packages/*", "apps/*"],
+  "resolutions": {
+    "**/react": "*",
+    "**/react-dom": "*"
+  },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
     "@types/bun": "latest",
@@ -20,6 +24,7 @@
     "check": "biome check",
     "check:fix": "biome check --write",
     "start": "turbo run start",
+    "clean": "turbo run clean && rm -rf node_modules",
     "docker:build": "docker compose build",
     "docker:build:no-cache": "docker compose build --no-cache",
     "docker:build:app": "docker compose build internal-app",
@@ -49,8 +54,5 @@
     "docker:down:internal-api": "docker compose stop internal-api && docker compose rm -f internal-api",
     "docker:down:next-app": "docker compose stop next-app && docker compose rm -f next-app",
     "docker:down:computer": "docker compose stop computer && docker compose rm -f computer"
-  },
-  "dependencies": {
-    "viem": "^2.23.13"
   }
 }

@@ -23,6 +23,12 @@ services:
       dockerfile: ./apps/agent/Dockerfile
     container_name: tradestream-agent
     env_file: .env
+    links:
+      - computer:computer
+    networks:
+      - dokploy-network
+    labels:
+      - traefik.enable=true
   
   internal-app:
     build:
@@ -97,6 +103,11 @@ services:
       - dokploy-network
     labels:
       - traefik.enable=true
+      - traefik.http.routers.computer.rule=Host(`computer.tradestream.${DOMAIN:-localhost}`)
+      - traefik.http.routers.computer.entrypoints=websecure
+      - traefik.http.routers.computer.tls.certResolver=letsencrypt
+      - traefik.http.services.computer.loadbalancer.server.port=5900
+      - traefik.http.services.computer.loadbalancer.server.port=6080
 
   streamer:
     build:

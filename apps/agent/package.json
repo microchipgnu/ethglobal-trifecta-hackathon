@@ -6,7 +6,18 @@
   "devDependencies": {
     "@types/bun": "latest"
   },
+  "scripts": {
+    "dev": "bun run src/index.ts",
+    "clean": "rm -rf dist node_modules"
+  },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^1.3.0",
+    "@novnc/novnc": "^1.6.0",
+    "ai": "^4.2.0",
+    "openai": "^4.89.0",
+    "rfb2": "^0.2.2"
   }
 }

@@ -10,8 +10,5 @@ RUN bun install
 # Copy source code
 COPY ./apps/agent/src ./src
 
-# Expose the port
-EXPOSE ${INTERNAL_API_PORT:-3030}
-
 # Start the application
 CMD ["bun", "src/index.ts"] 
