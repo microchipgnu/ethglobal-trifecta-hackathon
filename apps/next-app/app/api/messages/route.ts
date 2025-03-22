@@ -1,13 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
-import Message from '@/models/Message';
+import { AppMessage } from '@/models/AppMessage';
+import { NextRequest, NextResponse } from 'next/server';
 
 // GET all messages
 export async function GET() {
   try {
     await connectDB();
 
-    const messages = await Message.find({}).sort({ timestamp: 1 }).lean();
+    const messages = await AppMessage.find({}).sort({ timestamp: 1 }).lean();
 
     return NextResponse.json({ messages }, { status: 200 });
   } catch (error) {
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
 
     await connectDB();
 
-    const newMessage = await Message.create({
+    const newMessage = await AppMessage.create({
       content,
       sender,
       timestamp: new Date(),

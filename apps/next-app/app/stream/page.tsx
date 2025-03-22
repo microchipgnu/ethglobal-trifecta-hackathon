@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { IAppMessage } from '@/models/AppMessage';
 import { usePrivy } from '@privy-io/react-auth';
-import StreamPlayer from './components/StreamPlayer';
+import { useEffect, useRef, useState } from 'react';
 import ChatMessage from './components/ChatMessage';
-import { IMessage } from '@/models/Message';
+import StreamPlayer from './components/StreamPlayer';
 
 export default function StreamPage() {
   const { user, ready, authenticated } = usePrivy();
-  const [messages, setMessages] = useState<IMessage[]>([]);
+  const [messages, setMessages] = useState<IAppMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const chatContainerRef = useRef<HTMLDivElement>(null);

@@ -1,5 +1,5 @@
+import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'vite';
 
 console.log(process.env.HOST, process.env.PORT, process.env.DOMAIN);
