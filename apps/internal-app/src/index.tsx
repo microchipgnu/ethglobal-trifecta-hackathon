@@ -709,7 +709,7 @@ function SystemInfo() {
             }}
           >
             <div
-              className="h-full transition-all duration-500 ease-in-out"
+              className="h-full duration-500 ease-in-out"
               style={{
                 width: `${memory}%`,
                 background: getMemoryColor(),
@@ -1037,7 +1037,7 @@ function AnimatedAvatar() {
             <div className="flex justify-around w-16 mb-4 z-10">
               {/* Left eye */}
               <div
-                className={`w-5 h-5 rounded-full flex justify-center items-center transition-all duration-200 ${blinking ? 'h-0.5' : ''}`}
+                className={`w-5 h-5 rounded-full flex justify-center items-center duration-200 ${blinking ? 'h-0.5' : ''}`}
                 style={{
                   background: 'white',
                   transform: `translate(${eyePosition.x}px, ${eyePosition.y}px)`,
@@ -1049,7 +1049,7 @@ function AnimatedAvatar() {
 
               {/* Right eye */}
               <div
-                className={`w-5 h-5 rounded-full flex justify-center items-center transition-all duration-200 ${blinking ? 'h-0.5' : ''}`}
+                className={`w-5 h-5 rounded-full flex justify-center items-center duration-200 ${blinking ? 'h-0.5' : ''}`}
                 style={{
                   background: 'white',
                   transform: `translate(${eyePosition.x}px, ${eyePosition.y}px)`,

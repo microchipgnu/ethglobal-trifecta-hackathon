@@ -1,12 +1,10 @@
 import { describe, expect, test } from 'bun:test';
-import { MAX_REWARD, MIN_REWARD, generateRandomReward } from './rewards';
+import { generateRandomReward } from './rewards';
 
 describe('generateRandomReward', () => {
   test('should generate rewards within specified bounds or zero', () => {
     const reward = generateRandomReward();
-    expect(reward === 0 || (reward >= 0.00002 && reward <= 0.005)).toBe(
-      true
-    );
+    expect(reward === 0 || (reward >= 0.00002 && reward <= 0.005)).toBe(true);
   });
 
   test('should generate different values on subsequent calls', () => {
@@ -44,9 +42,12 @@ describe('generateRandomReward', () => {
 
         // Categorize the non-zero reward
         if (reward === 0.00002) distributions['0.00002']++;
-        else if (reward >= 0.0001 && reward <= 0.0005) distributions['0.0001-0.0005']++;
-        else if (reward > 0.0005 && reward <= 0.001) distributions['0.0005-0.001']++;
-        else if (reward >= 0.002 && reward <= 0.005) distributions['0.002-0.005']++;
+        else if (reward >= 0.0001 && reward <= 0.0005)
+          distributions['0.0001-0.0005']++;
+        else if (reward > 0.0005 && reward <= 0.001)
+          distributions['0.0005-0.001']++;
+        else if (reward >= 0.002 && reward <= 0.005)
+          distributions['0.002-0.005']++;
       }
     }
 
@@ -96,10 +97,14 @@ describe('generateRandomReward', () => {
     expect(zeroPercentage).toBeLessThan(65);
 
     // Calculate percentages of total requests for each range
-    const smallRewardsPercent = (distributions['0.0001-0.0005'] / NUM_REQUESTS) * 100;
-    const mediumRewardsPercent = (distributions['0.0005-0.001'] / NUM_REQUESTS) * 100;
-    const largeRewardsPercent = (distributions['0.002-0.005'] / NUM_REQUESTS) * 100;
-    const jackpotRewardsPercent = (distributions['0.00002'] / NUM_REQUESTS) * 100;
+    const smallRewardsPercent =
+      (distributions['0.0001-0.0005'] / NUM_REQUESTS) * 100;
+    const mediumRewardsPercent =
+      (distributions['0.0005-0.001'] / NUM_REQUESTS) * 100;
+    const largeRewardsPercent =
+      (distributions['0.002-0.005'] / NUM_REQUESTS) * 100;
+    const jackpotRewardsPercent =
+      (distributions['0.00002'] / NUM_REQUESTS) * 100;
 
     // 20% ± 5% for 0.0001-0.0005 range
     expect(smallRewardsPercent).toBeGreaterThan(15);

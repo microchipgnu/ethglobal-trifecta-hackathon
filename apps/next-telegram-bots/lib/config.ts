@@ -13,7 +13,7 @@ export const {
   NEXT_TG_SECRET,
   SERVER_WALLET_SECRET,
   REDIS_URL,
-} = process.env as Record<string, string>;
+} = process.env;
 
 export const GPT4oMini = openai('gpt-4o-mini');
 export const GPT4o = openai('gpt-4o');

@@ -36,7 +36,6 @@ export const initializeServices = async () => {
     _userService = new UserService(client);
 
     _initialized = true;
-    console.log('Database services initialized');
   } catch (error) {
     console.error('Failed to initialize database services:', error);
     throw error;

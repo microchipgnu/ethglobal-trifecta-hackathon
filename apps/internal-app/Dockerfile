@@ -17,6 +17,8 @@ RUN bun install
 # Set env variables and expose the port
 ENV HOST=0.0.0.0
 ENV PORT=5173
+ENV NODE_ENV="production"
+
 EXPOSE 5173
 
 # Run the application

@@ -1,10 +1,9 @@
 'use client';
 
 import { PrivyProvider as Privy } from '@privy-io/react-auth';
-import type { ReactNode } from 'react';
 import { base, baseSepolia } from 'viem/chains';
 
-export const PrivyProvider = ({ children }: { children: ReactNode }) => {
+export const PrivyProvider = ({ children }: { children: React.ReactNode }) => {
   return (
     <Privy
       appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID as string}
@@ -20,7 +19,7 @@ export const PrivyProvider = ({ children }: { children: ReactNode }) => {
         supportedChains: [base, baseSepolia],
       }}
     >
-      {children as React.ReactNode}
+      {children}
     </Privy>
   );
 };

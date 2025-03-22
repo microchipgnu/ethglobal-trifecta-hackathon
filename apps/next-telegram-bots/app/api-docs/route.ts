@@ -1,19 +1,16 @@
-import {
-  ApiReference,
-  type ApiReferenceOptions,
-} from '@scalar/nextjs-api-reference';
+import { ApiReference } from '@scalar/nextjs-api-reference';
 
-import { TUNNEL_URL, NEXT_TG_BEARER_TOKEN } from '@/lib/config';
+import { NEXT_TG_BEARER_TOKEN, TUNNEL_URL } from '@/lib/config';
 import { openApiSpec } from '@/lib/openapi';
 
-const config: ApiReferenceOptions = {
+const config = {
   spec: {
     content: openApiSpec,
   },
-  theme: 'purple',
+  theme: 'purple' as const,
   metaData: {
-    title: 'W3GPT Agents API',
-    description: 'W3GPT Agents API Reference',
+    title: 'Midcurve API',
+    description: 'Midcurve API Reference',
   },
   authentication: {
     http: {

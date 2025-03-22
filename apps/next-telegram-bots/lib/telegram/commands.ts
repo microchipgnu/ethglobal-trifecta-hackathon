@@ -42,8 +42,6 @@ export async function ensureUserExists(
   }
 }
 
-const alphaNumericRegex = /^[a-zA-Z0-9]+$/;
-
 export async function handleStartCommand(
   ctx: CommandContext<MyContext>
 ): Promise<void> {
@@ -59,20 +57,20 @@ export async function handleStartCommand(
     }
 
     const link = `${getBaseUrl()}/connect/${encryptUserId(userId)}`;
-    const tgLink = 'https://t.me/midcurvelive';
-    const followOnXLink = 'https://x.com/0xSoko';
+    const uniswapLink =
+      'https://app.uniswap.org/swap?chain=base&inputCurrency=ETH&outputCurrency=0x0b3e328455c4059EEb9e3f84b5543F74E24e7E1b';
 
     const keyboard = new InlineKeyboard()
-      .url('Register & Buy $MCRV', link)
+      .url('Connect Wallet', link)
       .row()
-      .url('Join the Community', tgLink)
+      .url('Buy $MCRV', uniswapLink)
       .row()
-      .url('Follow on X', followOnXLink);
+      .url('Watch Live', 'https://midcurve.live');
 
     // Send the image as a DM
     await ctx.api.sendPhoto(
       userId,
-      'https://pbs.twimg.com/profile_banners/1815217701058682880/1737510246/1500x500',
+      'https://lvjt7wkmlmpwhrpm.public.blob.vercel-storage.com/midcurve-diagram-banner-wide-6BMVgW6A0qpQQB0bth2ND7KYf4hO8k.png',
       {
         caption: `👋 *GM ${firstNameClean}*,
 
@@ -80,50 +78,11 @@ Welcome to *Midcurve\\.live*\\!
 
 Midcurve is a 24/7 livestreamed AI Agent that engages, researches, and trades based on live community inputs\\!
 
-1\\. Register & Buy $MCRV to participate\\!
+1\\. Connect an EVM wallet\\!
 
-2\\. Join our Community\\!
+2\\. Buy & Hold Midcurve $MCRV\\!
 
-3\\. Influence Midcurve's decisions in real\\-time\\!`,
-        parse_mode: 'MarkdownV2',
-        reply_markup: keyboard,
-      }
-    );
-  } catch (error) {
-    console.error('Error handling /start command:', error);
-    await ctx.reply('Sorry, I encountered an error processing your command.');
-  }
-}
-
-export async function handleGettingStarted(
-  ctx: CommandContext<MyContext>
-): Promise<void> {
-  try {
-    const userId = ctx.from?.id;
-
-    if (!userId) {
-      await ctx.reply("Sorry, I couldn't identify your user account.");
-      return;
-    }
-
-    const tgLink = 'https://t.me/midcurvelive';
-    const followOnXLink = 'https://x.com/microchipgnu';
-
-    const keyboard = new InlineKeyboard()
-      .url('Watch Livestream', 'https://midcurve.live')
-      .row()
-      .url('Join Community', tgLink)
-      .row()
-      .url('Follow on X', followOnXLink);
-
-    // Send the image
-    await ctx.replyWithPhoto(
-      'https://pbs.twimg.com/profile_banners/1815217701058682880/1737510246/1500x500',
-      {
-        caption:
-          '✅ *You have successfully registered\\! Welcome to Midcurve\\.live\\!*\n\n' +
-          'You can now participate in the 24/7 livestreamed AI Agent ecosystem\\.\n\n' +
-          'Watch the livestream, engage with the community, and influence Midcurve\'s decisions in real\\-time\\!',
+3\\. Influence agent decisions in real\\-time\\!`,
         parse_mode: 'MarkdownV2',
         reply_markup: keyboard,
       }
@@ -139,13 +98,13 @@ export async function handleHelpCommand(
 ): Promise<void> {
   try {
     await ctx.reply(
-      '🔍 *Available Commands:*\n\n• `/start` \\- Start or restart the bot\n• `/register` \\- Register and link your wallet\n• `/buy` \\- Purchase $MCRV tokens\n• `/help` \\- Show this help menu\n\n📝 *About Midcurve\\.live:*\n\n• Midcurve is a 24/7 livestreamed AI Agent\n• Community members can influence Midcurve\'s research and trading\n• Buy $MCRV tokens to participate in the ecosystem\n\nIf you have any issues, contact us at support@midcurve\\.live',
+      "🔍 *Available Commands:*\n\n• `/start` \\- Start or restart the bot\n• `/register` \\- Register and link your wallet\n• `/buy` \\- Purchase $MCRV tokens\n• `/help` \\- Show this help menu\n\n📝 *About Midcurve\\.live:*\n\n• Midcurve is a 24/7 livestreamed AI Agent\n• Community members can influence Midcurve's research and trading\n• Buy $MCRV tokens to participate in the ecosystem\n\nIf you have any issues, contact us at support@midcurve\\.live",
       { parse_mode: 'MarkdownV2' }
     );
   } catch (error) {
     console.error('Error handling /help command:', error);
     await ctx.reply(
-      'We\'re preparing Midcurve.live for launch! Stay tuned and come back soon!'
+      "We're preparing Midcurve.live for launch! Stay tuned and come back soon!"
     );
   }
 }
@@ -163,7 +122,7 @@ export async function handleConnectCommand(
     const link = `${getBaseUrl()}/connect/${encryptUserId(userId)}`;
     await ctx.api.sendMessage(
       userId,
-      `🔗 *Register your wallet*\n\nClick the link below to connect your wallet to your Telegram account and participate in the Midcurve ecosystem:\n\n[Connect Wallet](${link})`,
+      `🔗 *Connect your wallet*\n\nClick the link below to connect your wallet to your Telegram account and participate in the Midcurve ecosystem:\n\n[Connect Wallet](${link})`,
       {
         parse_mode: 'MarkdownV2',
       }
@@ -179,13 +138,13 @@ export async function handleConnectCommand(
 export async function registerCommandHandlers(bot: MyBot): Promise<void> {
   try {
     bot.command('start', handleStartCommand);
-    bot.command('register', handleConnectCommand);
+    bot.command('connect', handleConnectCommand);
     bot.command('buy', handleBuyTokens);
     bot.command('help', handleHelpCommand);
 
     await bot.api.setMyCommands([
       { command: 'start', description: 'Start the bot' },
-      { command: 'register', description: 'Register & Link Wallet' },
+      { command: 'connect', description: 'Connect Wallet' },
       { command: 'buy', description: 'Buy $MCRV Tokens' },
       { command: 'help', description: 'Show help text' },
     ]);
