@@ -4,7 +4,7 @@ Launch and manage multiple Telegram bots from a single Next.js deployment.
 
 ## Forked from
 
-Forked from [Funny Agents](https://agents.funny.money) Funny Agents Platform. Built by [@markeljan](https://github.com/markeljan) ETHDenver 2025.
+Forked from [Funny Agents](https://agents.funny.money) Funny Agents Platform. Built by [@markeljan](https://github.com/markeljan)
 
 ## Features
 
@@ -12,7 +12,6 @@ Forked from [Funny Agents](https://agents.funny.money) Funny Agents Platform. Bu
 - Built with Next.js, Tailwind CSS, and TypeScript.
 - Uses Grammy SDK for Telegram Bot API.
 - MongoDB, Vercel Blob, Redis for database and caching.
-
 
 # Midcurve.live $MCRV
 
