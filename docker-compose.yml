@@ -12,7 +12,7 @@ services:
       - dokploy-network
     labels:
       - traefik.enable=true
-      - traefik.http.routers.next-telegram-bots.rule=Host(`tradestream.${DOMAIN:-localhost}`)
+      - traefik.http.routers.next-telegram-bots.rule=Host(`${DOMAIN:-localhost}`)
       - traefik.http.routers.next-telegram-bots.entrypoints=websecure
       - traefik.http.routers.next-telegram-bots.tls.certResolver=letsencrypt
       - traefik.http.services.next-telegram-bots.loadbalancer.server.port=${NEXT_TELEGRAM_BOTS_PORT:-3420}
@@ -153,10 +153,10 @@ services:
     command: ./objs/srs -c conf/rtmp2rtc.conf
     labels:
       - traefik.enable=true
-      - traefik.http.routers.srs.rule=Host(`srs.tradestream.${DOMAIN:-localhost}`)
+      - traefik.http.routers.srs.rule=Host(`stream.${DOMAIN:-localhost}`)
       - traefik.http.routers.srs.entrypoints=websecure
       - traefik.http.routers.srs.tls.certResolver=letsencrypt
-      - traefik.http.services.srs.loadbalancer.server.port=2985
+      - traefik.http.services.srs.loadbalancer.server.port=9080
 
   redis:
     image: redis:alpine
