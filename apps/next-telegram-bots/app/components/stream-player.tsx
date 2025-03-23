@@ -64,7 +64,7 @@ export const StreamPlayer = () => {
           className={`absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black transition-opacity duration-300 ${showFallback ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
         >
           <img
-            src="/stream-fallback.png"
+            src="/midcurve-diagram.webp"
             alt="Stream Fallback"
             className="animate-pulse"
           />
