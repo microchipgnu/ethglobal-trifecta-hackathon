@@ -17,6 +17,30 @@ services:
       - traefik.http.routers.next-telegram-bots.tls.certResolver=letsencrypt
       - traefik.http.services.next-telegram-bots.loadbalancer.server.port=${NEXT_TELEGRAM_BOTS_PORT:-3420}
 
+  stream-proxy:
+    build:
+      context: .
+      dockerfile: ./apps/stream-proxy/Dockerfile
+    container_name: tradestream-stream-proxy
+    restart: always
+    ports:
+      - "1936:1935"  # RTMP port
+      - "8081:8080"  # HTTP port
+    networks:
+      - dokploy-network
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.stream-proxy.rule=Host(`stream-proxy.${DOMAIN:-localhost}`)
+      - traefik.http.routers.stream-proxy.entrypoints=websecure
+      - traefik.http.routers.stream-proxy.tls.certResolver=letsencrypt
+      - traefik.http.services.stream-proxy.loadbalancer.server.port=8080
+      - traefik.http.middlewares.stream-proxy-cors.headers.accesscontrolallowmethods=GET,OPTIONS
+      - traefik.http.middlewares.stream-proxy-cors.headers.accesscontrolallowheaders=*
+      - traefik.http.middlewares.stream-proxy-cors.headers.accesscontrolalloworiginlist=*
+      - traefik.http.middlewares.stream-proxy-cors.headers.accesscontrolmaxage=100
+      - traefik.http.middlewares.stream-proxy-cors.headers.addvaryheader=true
+      - traefik.http.routers.stream-proxy.middlewares=stream-proxy-cors
+
   agent:
     build:
       context: .
@@ -163,12 +187,8 @@ services:
       - traefik.http.routers.srs.entrypoints=websecure
       - traefik.http.routers.srs.tls.certResolver=letsencrypt
       - traefik.http.services.srs.loadbalancer.server.port=9080
-      - traefik.http.middlewares.srs-cors.headers.accessControlAllowMethods=GET,OPTIONS,PUT,POST,DELETE
-      - traefik.http.middlewares.srs-cors.headers.accessControlAllowOriginList=*
-      - traefik.http.middlewares.srs-cors.headers.accessControlAllowHeaders=*
-      - traefik.http.middlewares.srs-cors.headers.accessControlMaxAge=100
-      - traefik.http.middlewares.srs-cors.headers.addVaryHeader=true
       - traefik.http.routers.srs.middlewares=srs-cors
+
   redis:
     image: redis:alpine
     container_name: tradestream-redis

@@ -7,7 +7,8 @@ const ReactPlayer = dynamic(() => import('react-player/lazy'), {
 });
 
 export const StreamPlayer = () => {
-  const streamUrl = process.env.NEXT_PUBLIC_STREAM_URL;
+  const baseUrl = process.env.NEXT_PUBLIC_STREAM_URL || 'http://localhost:8081';
+  const streamUrl = `${baseUrl}/hls/secure_stream.m3u8`;
 
   return (
     <div className="h-full w-full flex flex-col rounded-lg overflow-hidden border border-indigo-500/30 shadow-lg shadow-indigo-500/20">
@@ -20,6 +21,15 @@ export const StreamPlayer = () => {
           playing
           controls
           muted
+          config={{
+            file: {
+              forceHLS: true,
+              hlsOptions: {
+                maxBufferLength: 30,
+                maxMaxBufferLength: 60,
+              },
+            },
+          }}
         />
       </div>
       <div className="p-4 bg-[#1A1B26] text-white">
