@@ -1,8 +1,21 @@
 {
   "name": "tradestream",
-  "type": "module",
-  "workspaces": ["apps/*"],
   "module": "index.ts",
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "@types/bun": "1.2.5",
+    "turbo": "^2.4.4",
+    "typescript": "^5.8.2"
+  },
+  "engines": {
+    "node": ">=20 <=22"
+  },
+  "packageManager": "bun@1.2.5",
+  "private": true,
+  "resolutions": {
+    "**/react": "*",
+    "**/react-dom": "*"
+  },
   "scripts": {
     "generate-address": "bun scripts/generate-address.ts",
     "dev": "turbo run dev",
@@ -38,20 +51,7 @@
     "docker:down:computer": "docker compose stop computer && docker compose rm -f computer",
     "docker:down:next-telegram-bots": "docker compose stop next-telegram-bots && docker compose rm -f next-telegram-bots"
   },
-  "devDependencies": {
-    "@biomejs/biome": "1.9.4",
-    "@types/bun": "1.2.5",
-    "turbo": "^2.4.4",
-    "typescript": "^5.8.2"
-  },
-  "engines": {
-    "node": ">=20 <=22"
-  },
-  "packageManager": "bun@1.2.5",
-  "private": true,
-  "resolutions": {
-    "**/react": "*",
-    "**/react-dom": "*"
-  },
-  "trustedDependencies": ["@biomejs/biome"]
+  "trustedDependencies": ["@biomejs/biome"],
+  "type": "module",
+  "workspaces": ["apps/*"]
 }

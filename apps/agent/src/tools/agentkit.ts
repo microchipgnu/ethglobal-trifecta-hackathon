@@ -1,4 +1,4 @@
-import { AgentKit, ViemWalletProvider, } from "@coinbase/agentkit";
+import { AgentKit, ViemWalletProvider, walletActionProvider, wowActionProvider, } from "@coinbase/agentkit";
 import { getVercelAITools } from "@coinbase/agentkit-vercel-ai-sdk";
 import { createWalletClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
@@ -20,10 +20,10 @@ export const getTools = async () => {
     const agentKit = await AgentKit.from({
         walletProvider,
         actionProviders: [
-
+         walletActionProvider(),
+         wowActionProvider(),
         ]
     });
-
     // TODO: it says it's not async, but it is. KEEP IT
     const tools = await getVercelAITools(agentKit);
 

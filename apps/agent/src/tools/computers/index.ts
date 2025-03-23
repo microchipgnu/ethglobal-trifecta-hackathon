@@ -5,6 +5,7 @@ import { type ResponseInput, type ResponseInputItem, type Tool } from "openai/re
 import { z } from "zod";
 import { COMPUTER_USE_SYSTEM_PROMPT } from "../../prompts";
 import { VNCComputer } from "./vnc";
+
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
@@ -112,9 +113,11 @@ const computerUse: AITool = {
     }),
     execute: async ({ prompt }) => {
         await useComputer(prompt)
-    }
+    },
 }
 
 export const getTools = async () => {
-    return [computerUse]
+    return {
+        computerUse
+    }
 }
