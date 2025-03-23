@@ -25,8 +25,5 @@ ENV NODE_ENV="development"
 
 EXPOSE 3420
 
-# Run the application with performance optimizations:
-# - --no-watch disables file watching 
-# - --no-hot disables hot module replacement
-# - NODE_ENV=production reduces debug overhead
-CMD ["bun", "run", "--cwd", "apps/next-telegram-bots", "dev", "--no-watch", "--no-hot"]
+# Run the application
+CMD ["bun", "run", "--cwd", "apps/next-telegram-bots", "start"]
