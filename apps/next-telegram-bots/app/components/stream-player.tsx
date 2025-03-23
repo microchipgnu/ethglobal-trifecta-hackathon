@@ -105,11 +105,6 @@ export const StreamPlayer = () => {
           // controls
           muted
           onReady={handlePlayerReady}
-          config={{
-            file: {
-              forceHLS: true,
-            },
-          }}
         />
       </div>
       <div className="p-4 bg-[#1A1B26] text-white">
