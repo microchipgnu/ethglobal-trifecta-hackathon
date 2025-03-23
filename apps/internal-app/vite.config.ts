@@ -10,6 +10,9 @@ export default defineConfig({
     host: process.env.HOST ? process.env.HOST : '0.0.0.0',
     port: process.env.PORT ? Number.parseInt(process.env.PORT) : 5173,
     strictPort: true,
+    watch: {
+      ignored: ['**/node_modules/**', '**/dist/**', '**/.git/**']
+    },
     // Allow all hosts to make requests to the dev server
     cors: true,
     // Allow specific hosts (including the proxy)
