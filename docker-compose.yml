@@ -25,7 +25,7 @@ services:
     restart: always
     ports:
       - "1936:1935"  # RTMP port
-      - "8081:8080"  # HTTP port
+      - "8081:8084"  # HTTP port
     networks:
       - dokploy-network
     labels:
@@ -33,7 +33,7 @@ services:
       - traefik.http.routers.stream-proxy.rule=Host(`stream-proxy.${DOMAIN:-localhost}`)
       - traefik.http.routers.stream-proxy.entrypoints=websecure
       - traefik.http.routers.stream-proxy.tls.certResolver=letsencrypt
-      - traefik.http.services.stream-proxy.loadbalancer.server.port=8080
+      - traefik.http.services.stream-proxy.loadbalancer.server.port=8084
       - traefik.http.middlewares.stream-proxy-cors.headers.accesscontrolallowmethods=GET,OPTIONS
       - traefik.http.middlewares.stream-proxy-cors.headers.accesscontrolallowheaders=*
       - traefik.http.middlewares.stream-proxy-cors.headers.accesscontrolalloworiginlist=*

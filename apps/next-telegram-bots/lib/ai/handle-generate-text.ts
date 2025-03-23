@@ -85,7 +85,7 @@ export const handleGenerateText = async ({
       agent,
     }),
     messages: coreMessages,
-    maxSteps: 4,
+    maxSteps: 5,
     tools: combinedTools,
   });
 

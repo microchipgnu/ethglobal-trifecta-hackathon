@@ -16,24 +16,32 @@ export default function Page() {
         background: 'linear-gradient(to bottom, #1E2030, #2A3A5E)',
       }}
     >
-      <div className="flex flex-col w-full md:w-7/8 min-h-screen mx-auto p-2 justify-between items-center space-y-8">
-        <div className="pt-6 md:pt-12">
+      <div className="flex flex-col w-full min-h-screen">
+        {/* Header with small banner in top left */}
+        <div className="w-full p-4">
           <img
             src="/midcurve-diagram-banner-wide.png"
             alt="Midcurve.live"
-            className="h-16 md:h-32 w-auto"
+            className="h-10 w-auto"
           />
         </div>
 
-        {/* Main Stream Player Section */}
-        <div className="w-full max-w-4xl">
-          <StreamPlayer />
+        {/* Main Content Area */}
+        <div className="flex flex-col md:flex-row flex-1 p-2 gap-4">
+          {/* Stream Player taking most of the screen */}
+          <div className="flex-1 md:w-3/4">
+            <StreamPlayer />
+          </div>
+
+          {/* Side Content */}
+          <div className="md:w-1/4 flex flex-col gap-4">
+            <Hero />
+            <HowToParticipate />
+          </div>
         </div>
 
-        <Hero />
-        <HowToParticipate />
-
-        <div className="w-full p-5 gap-5 flex flex-col md:flex-row justify-between items-center space-y-8 md:space-y-0">
+        {/* Footer */}
+        <div className="w-full p-4 flex justify-between items-center">
           <div className="flex space-x-4">
             <a
               href="https://x.com/microchipgnu"

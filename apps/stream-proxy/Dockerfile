@@ -18,7 +18,7 @@ RUN chmod +x /start.sh
 
 # Expose ports
 EXPOSE 1935
-EXPOSE 8080
+EXPOSE 8084
 
 # Start Nginx and FFmpeg
 CMD ["/start.sh"] 

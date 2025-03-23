@@ -16,14 +16,13 @@ This service consumes an HTTP FLV stream from an external source and makes it av
 ## URLs
 
 When deployed, the stream will be available at:
-
-- HLS: `https://stream-proxy.yourdomain.com/hls/secure_stream.m3u8`
-- DASH: `https://stream-proxy.yourdomain.com/dash/secure_stream.mpd`
-- Stats: `https://stream-proxy.yourdomain.com/stat`
-- Direct access: `https://stream-proxy.yourdomain.com/secure_stream` (redirects to HLS)
+- HLS: `https://stream-proxy.ethglobal-trifecta-hackathon.orb.local/hls/secure_stream.m3u8`
+- DASH: `https://stream-proxy.ethglobal-trifecta-hackathon.orb.local/dash/secure_stream.mpd`
+- Stats: `https://stream-proxy.ethglobal-trifecta-hackathon.orb.local/stat`
+- Direct access: `https://stream-proxy.ethglobal-trifecta-hackathon.orb.local/secure_stream` (redirects to HLS)
 
 ## Technology
 
 - Nginx with RTMP module
 - FFmpeg for stream conversion
-- Traefik for HTTPS termination and routing 
+- Traefik for HTTPS termination and routing
