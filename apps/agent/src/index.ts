@@ -1,20 +1,39 @@
-import { generateText } from "ai"
+import { generateObject, generateText } from "ai"
 import { getTools as getAgentkitTools } from "./tools/agentkit"
 import { getTools as getComputerTools } from "./tools/computers"
 import { getTools as getToolhouseTools } from "./tools/toolhouse"
 import { openai } from "@ai-sdk/openai";
+import { z } from "zod";
 
 export const executePrompt = async (prompt: string) => {
     const agentkitTools = await getAgentkitTools();
     const computerTools = await getComputerTools();
     const toolhouseTools = await getToolhouseTools();
+
+
+    // classify the prompt
+    const { object: classification } = await generateObject({
+        model: openai("gpt-4o"),
+        schema: z.object({
+          reasoning: z.string(),
+          type: z.enum(['crypto', 'general', 'computer']),
+        }),
+        prompt: `Classify this user query:
+
+        ${prompt}
     
+        Determine:
+        1. Query type (crypto, general, or needs to use a computer)
+      `,
+    });
+
+    const queryType = classification.type;
+    const toolsToUse = queryType === 'crypto' ? agentkitTools : queryType === 'computer' ? computerTools : toolhouseTools;
+
     const result = await generateText({
         model: openai("gpt-4o"),
         prompt: prompt,
-        tools: {
-            ...computerTools,
-        },
+        tools: toolsToUse,
         maxSteps: 10,
         maxRetries: 3,
     })
