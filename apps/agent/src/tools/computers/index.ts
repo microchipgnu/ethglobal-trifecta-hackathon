@@ -31,8 +31,9 @@ const useComputer = async (prompt: string) => {
         content: prompt,
     }]
 
-    while (true) {
+    let continueLoop = true;
 
+    while (continueLoop) {
         const result = await openai.responses.create({
             model: "computer-use-preview",
             input: [{
@@ -100,6 +101,15 @@ const useComputer = async (prompt: string) => {
                 }
 
                 items.push(callOutput)
+            }
+        }
+
+        const lastItem = items[items.length - 1];
+        // If we got a final response, break the inner loop
+        if (lastItem?.type === 'message') {
+            if (lastItem.role === 'assistant') {
+                break;
+                continueLoop = false;
             }
         }
     }
