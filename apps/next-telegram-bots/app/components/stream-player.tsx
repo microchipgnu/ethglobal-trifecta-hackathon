@@ -7,25 +7,19 @@ const ReactPlayer = dynamic(() => import('react-player/lazy'), {
 });
 
 export const StreamPlayer = () => {
+  const streamUrl = process.env.NEXT_PUBLIC_STREAM_URL;
+
   return (
     <div className="h-full w-full flex flex-col rounded-lg overflow-hidden border border-indigo-500/30 shadow-lg shadow-indigo-500/20">
       <div className="relative w-full h-0 pb-[56.25%] bg-black">
         <ReactPlayer
-          url={process.env.NEXT_PUBLIC_STREAM_URL}
+          url={streamUrl}
           width="100%"
           height="100%"
           style={{ position: 'absolute', top: 0, left: 0 }}
           playing
           controls
           muted
-          config={{
-            file: {
-              attributes: {
-                crossOrigin: 'anonymous',
-              },
-              forceVideo: true,
-            },
-          }}
         />
       </div>
       <div className="p-4 bg-[#1A1B26] text-white">

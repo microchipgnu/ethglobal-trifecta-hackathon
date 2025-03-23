@@ -149,30 +149,26 @@ services:
     container_name: tradestream-srs
     env_file: .env
     ports:
-      - "2935:1935"             # RTMP port
-      - "2985:1985"             # HTTP API port
-      - "9080:8080"             # HTTP port for HLS/HTTP-FLV
-      - "8088:8088"             # HTTPS and WebRTC over TCP
-      - "8000:8000/udp"         # WebRTC UDP port
+      - "2935:1935"     # SRS RTMP port (internal 1935 mapped to host 2935)
+      - "2985:1985"     # SRS HTTP API port (internal 1985 mapped to host 2985)
+      - "9080:8080"     # SRS HLS/HTTP-FLV port (internal 8080 mapped to host 9080)
+      - "8000:8000/udp" # SRS WebRTC UDP port
     restart: always
     networks:
       - dokploy-network
-    environment:
-      - CANDIDATE="stream.midcurve.live"
-      - SRS_VHOST_RTC_RTC_TO_RTMP=on 
-      - SRS_HTTP_API_LISTEN=8080
-      - SRS_HTTP_API_HTTPS_ENABLED=on
-      - SRS_HTTP_API_HTTPS_LISTEN=8088
-      - SRS_HTTP_SERVER_HTTTPS_ENABLED=on
-      - SRS_RTC_SERVER_TCP_ENABLED=on
-      - SRS_RTC_SERVER_TCP_LISTEN=8088
-      - SRS_RTC_SERVER_PROTOCOL=tcp
+    command: ./objs/srs -c conf/rtmp2rtc.conf
     labels:
       - traefik.enable=true
-      - traefik.http.routers.srs.rule=Host(`stream.midcurve.live`)
+      - traefik.http.routers.srs.rule=Host(`stream.${DOMAIN:-localhost}`)
       - traefik.http.routers.srs.entrypoints=websecure
       - traefik.http.routers.srs.tls.certResolver=letsencrypt
-      - traefik.http.services.srs.loadbalancer.server.port=8088
+      - traefik.http.services.srs.loadbalancer.server.port=9080
+      - traefik.http.middlewares.srs-cors.headers.accessControlAllowMethods=GET,OPTIONS,PUT,POST,DELETE
+      - traefik.http.middlewares.srs-cors.headers.accessControlAllowOriginList=*
+      - traefik.http.middlewares.srs-cors.headers.accessControlAllowHeaders=*
+      - traefik.http.middlewares.srs-cors.headers.accessControlMaxAge=100
+      - traefik.http.middlewares.srs-cors.headers.addVaryHeader=true
+      - traefik.http.routers.srs.middlewares=srs-cors
   redis:
     image: redis:alpine
     container_name: tradestream-redis
