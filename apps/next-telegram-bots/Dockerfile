@@ -21,7 +21,7 @@ RUN bun run --cwd apps/next-telegram-bots build
 # Set env variables and expose the port
 ENV HOST="0.0.0.0"
 ENV PORT="3420"
-ENV NODE_ENV="production"
+ENV NODE_ENV="development"
 
 EXPOSE 3420
 
