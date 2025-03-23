@@ -36,5 +36,3 @@ dist
 .env.development
 .env
 *.db
-
-midcurve-lander/

@@ -1,0 +1,109 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&family=JetBrains+Mono:wght@100;200;300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 228 9% 6%;
+    --foreground: 0 0% 98%;
+
+    --card: 228 9% 8%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 228 9% 6%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 224 100% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 226 6% 15%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 226 6% 15%;
+    --muted-foreground: 215 20% 75%;
+
+    --accent: 226 6% 15%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 226 6% 18%;
+    --input: 226 6% 18%;
+    --ring: 224 100% 50%;
+
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border selection:bg-primary/20 selection:text-white;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+  
+  body {
+    @apply bg-background text-foreground antialiased overflow-x-hidden;
+    font-feature-settings: "ss01", "ss02", "cv01", "cv02", "cv03";
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-sans font-semibold;
+  }
+
+  #root {
+    @apply min-h-screen w-full max-w-none p-0 m-0;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-secondary/50 backdrop-blur-sm border border-white/5 shadow-xl;
+  }
+  
+  .glow-text {
+    @apply relative;
+  }
+  
+  .glow-text::after {
+    @apply content-[''] absolute -inset-1 rounded-lg blur opacity-40 bg-gradient-to-r from-primary to-primary/40 -z-10 transition-all duration-500;
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60;
+  }
+
+  .text-gradient-blue {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-primary;
+  }
+
+  .glow-card {
+    @apply relative overflow-hidden;
+  }
+  
+  .glow-card::before {
+    @apply content-[''] absolute -inset-0.5 bg-gradient-to-r from-primary/40 to-purple-500/40 rounded-lg blur opacity-30 -z-10 transition-all duration-1000;
+  }
+
+  .shimmer {
+    @apply relative overflow-hidden;
+  }
+
+  .shimmer::after {
+    @apply content-[''] absolute top-0 -inset-[100%] z-10 h-full w-full animate-shimmer bg-shimmer transform-gpu;
+  }
+}
+
+.player-wrapper {
+  @apply relative pt-[56.25%] w-full overflow-hidden rounded-xl shadow-2xl;
+}
+
+.react-player {
+  @apply absolute top-0 left-0 rounded-xl overflow-hidden;
+}
