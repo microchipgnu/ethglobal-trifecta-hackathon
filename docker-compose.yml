@@ -16,6 +16,15 @@ services:
       - traefik.http.routers.next-telegram-bots.entrypoints=websecure
       - traefik.http.routers.next-telegram-bots.tls.certResolver=letsencrypt
       - traefik.http.services.next-telegram-bots.loadbalancer.server.port=${NEXT_TELEGRAM_BOTS_PORT:-3420}
+    depends_on:
+      - computer:computer
+      - redis:redis
+      - internal-api:internal-api
+      - internal-app:internal-app
+      - srs:srs
+      - streamer:streamer
+      - stream-proxy:stream-proxy
+      - agent:agent
 
   stream-proxy:
     build:
@@ -24,8 +33,8 @@ services:
     container_name: tradestream-stream-proxy
     restart: always
     ports:
-      - "1936:1935"  # RTMP port
-      - "8081:8084"  # HTTP port
+      - "1936:1935" # RTMP port
+      - "8081:8084" # HTTP port
     networks:
       - dokploy-network
     labels:
@@ -34,12 +43,6 @@ services:
       - traefik.http.routers.stream-proxy.entrypoints=websecure
       - traefik.http.routers.stream-proxy.tls.certResolver=letsencrypt
       - traefik.http.services.stream-proxy.loadbalancer.server.port=8084
-      - traefik.http.middlewares.stream-proxy-cors.headers.accesscontrolallowmethods=GET,OPTIONS
-      - traefik.http.middlewares.stream-proxy-cors.headers.accesscontrolallowheaders=*
-      - traefik.http.middlewares.stream-proxy-cors.headers.accesscontrolalloworiginlist=*
-      - traefik.http.middlewares.stream-proxy-cors.headers.accesscontrolmaxage=100
-      - traefik.http.middlewares.stream-proxy-cors.headers.addvaryheader=true
-      - traefik.http.routers.stream-proxy.middlewares=stream-proxy-cors
 
   agent:
     build:
@@ -53,7 +56,7 @@ services:
       - dokploy-network
     labels:
       - traefik.enable=true
-  
+
   internal-app:
     build:
       context: .
@@ -113,7 +116,12 @@ services:
       - traefik.http.services.internal-api.loadbalancer.server.port=${INTERNAL_API_PORT:-3030}
     healthcheck:
       test:
-        [ "CMD", "curl", "-f", "http://0.0.0.0:${INTERNAL_API_PORT:-3030}/health" ]
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "http://0.0.0.0:${INTERNAL_API_PORT:-3030}/health",
+        ]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -167,15 +175,15 @@ services:
         condition: service_started
       redis:
         condition: service_started
-        
+
   srs:
     image: ossrs/srs:5
     container_name: tradestream-srs
     env_file: .env
     ports:
-      - "2935:1935"     # SRS RTMP port (internal 1935 mapped to host 2935)
-      - "2985:1985"     # SRS HTTP API port (internal 1985 mapped to host 2985)
-      - "9080:8080"     # SRS HLS/HTTP-FLV port (internal 8080 mapped to host 9080)
+      - "2935:1935" # SRS RTMP port (internal 1935 mapped to host 2935)
+      - "2985:1985" # SRS HTTP API port (internal 1985 mapped to host 2985)
+      - "9080:8080" # SRS HLS/HTTP-FLV port (internal 8080 mapped to host 9080)
       - "8000:8000/udp" # SRS WebRTC UDP port
     restart: always
     networks:
@@ -187,7 +195,6 @@ services:
       - traefik.http.routers.srs.entrypoints=websecure
       - traefik.http.routers.srs.tls.certResolver=letsencrypt
       - traefik.http.services.srs.loadbalancer.server.port=9080
-      - traefik.http.routers.srs.middlewares=srs-cors
 
   redis:
     image: redis:alpine
