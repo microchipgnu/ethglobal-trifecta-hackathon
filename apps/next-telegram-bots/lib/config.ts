@@ -15,9 +15,6 @@ export const {
   REDIS_URL,
 } = process.env;
 
-export const GPT4oMini = openai('gpt-4o-mini');
-export const GPT4o = openai('gpt-4o');
-
 export const toolhouse = new Toolhouse({
   apiKey: TOOLHOUSE_API_KEY,
   provider: 'vercel',
@@ -30,8 +27,13 @@ export const getTools = async (
   return (await toolhouse.getTools(bundle, requestConfig)) as ToolSet;
 };
 
+const APP_URL = 'https://midcurve.live';
+const isProduction = process.env.NODE_ENV === 'production';
+
 export const getBaseUrl = () => {
-  return TUNNEL_URL || DEPLOYMENT_URL;
+  return isProduction
+    ? APP_URL
+    : TUNNEL_URL || DEPLOYMENT_URL || 'http://localhost:3000';
 };
 
 export const getBotUrl = (telegramBotToken: string) => {

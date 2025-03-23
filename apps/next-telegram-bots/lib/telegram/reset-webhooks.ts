@@ -13,9 +13,9 @@ async function handleRateLimit(
   return new Promise((resolve) => setTimeout(resolve, waitTime));
 }
 
-async function resetWebhooks() {
+async function resetWebhooks(customBaseUrl?: string) {
   const allAgents = await (await agentService()).getAllAgents();
-  const baseUrl = getBaseUrl();
+  const baseUrl = customBaseUrl || getBaseUrl();
   let successCount = 0;
 
   for (const { telegramBotToken } of allAgents) {
@@ -60,6 +60,12 @@ async function resetWebhooks() {
   }
 
   console.log(`Reset ${successCount} webhooks to ${baseUrl}`);
+  
+  return {
+    success: true,
+    message: `Reset ${successCount} webhooks to ${baseUrl}`,
+    count: successCount
+  };
 }
 
 if (require.main === module) {

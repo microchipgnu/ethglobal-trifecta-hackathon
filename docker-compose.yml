@@ -83,12 +83,7 @@ services:
       - traefik.http.services.internal-api.loadbalancer.server.port=${INTERNAL_API_PORT:-3030}
     healthcheck:
       test:
-        [
-          "CMD",
-          "curl",
-          "-f",
-          "http://0.0.0.0:${INTERNAL_API_PORT:-3030}/health",
-        ]
+        [ "CMD", "curl", "-f", "http://0.0.0.0:${INTERNAL_API_PORT:-3030}/health" ]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -129,14 +124,12 @@ services:
     networks:
       - dokploy-network
     links:
-      - rtmp-server:rtmp-server
       - internal-app:internal-app
       - internal-api:internal-api
       - redis:redis
+      - srs:srs
     depends_on:
       computer:
-        condition: service_started
-      rtmp-server:
         condition: service_started
       internal-app:
         condition: service_started
@@ -144,21 +137,26 @@ services:
         condition: service_started
       redis:
         condition: service_started
-
-  rtmp-server:
-    image: tiangolo/nginx-rtmp
-    container_name: rtmp-server
+        
+  srs:
+    image: ossrs/srs:5
+    container_name: tradestream-srs
+    env_file: .env
     ports:
-      - 1935:1935
+      - "2935:1935"     # SRS RTMP port (internal 1935 mapped to host 2935)
+      - "2985:1985"     # SRS HTTP API port (internal 1985 mapped to host 2985)
+      - "9080:8080"     # SRS HLS/HTTP-FLV port (internal 8080 mapped to host 9080)
+      - "8000:8000/udp" # SRS WebRTC UDP port
     restart: always
     networks:
       - dokploy-network
+    command: ./objs/srs -c conf/rtmp2rtc.conf
     labels:
       - traefik.enable=true
-      - traefik.http.routers.rtmp.rule=Host(`rtmp.tradestream.${DOMAIN:-yourdomain.com}`)
-      - traefik.http.routers.rtmp.entrypoints=websecure
-      - traefik.http.routers.rtmp.tls.certResolver=letsencrypt
-      - traefik.http.services.rtmp.loadbalancer.server.port=1935
+      - traefik.http.routers.srs.rule=Host(`srs.tradestream.${DOMAIN:-localhost}`)
+      - traefik.http.routers.srs.entrypoints=websecure
+      - traefik.http.routers.srs.tls.certResolver=letsencrypt
+      - traefik.http.services.srs.loadbalancer.server.port=2985
 
   redis:
     image: redis:alpine

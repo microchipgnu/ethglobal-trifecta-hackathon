@@ -154,3 +154,44 @@ flowchart TD
 ## Next Steps
 
 Ready to dive in? Clone the repo, set up Tradestream locally, and experiment with your own AI-driven stream. Have questions or ideas? Join our community or contribute via GitHub. Happy streaming!
+
+
+# Midcurve.live Project Info
+
+## Why This Agent Is Bullish
+
+### Thesis
+
+24/7 Livestreamed AI – Midcurve.live is always on, showcasing real-time research, trades, and AI reasoning.
+
+Community-Guided Trading – $MCRV holders influence the agent’s decisions, forming a crowd-sourced intelligence loop.
+
+Transparent Execution – Every move is documented on a live stream, fostering trust and accountability.
+
+Robust Architecture – Built on a new modern stack, fully containerized and self hosted.
+
+### What Does $MCRV Do?
+
+Token-Gated Influence – Holding $MCRV grants users direct sway over the AI’s trading strategies.
+
+Telegram Integration – Quickly connect wallets, buy tokens, and interact with the agent via bot commands.
+
+Real-Time Insights – Stay updated with the AI’s market analysis and trades as they happen.
+
+Collective Decision-Making – Pool knowledge across the community, with the AI learning from user inputs.
+
+### Growth Catalysts
+
+Rising AI Trading Trend – Demand for AI-enhanced trading is surging, positioning Midcurve.live at the forefront.
+
+Transparent, Engaging Format – The livestream approach and community input can attract wider adoption than typical AI bots.
+
+Continuous AI Evolution – Rapid improvements fueled by 24/7 user feedback can boost both performance and user confidence.
+
+### Team
+
+Built by Luis aka microchipgnu and Markeljan aka Soko
+
+We're seasoned innovators in Web3 and AI, having twice been finalists at ETHGlobal hackathons with projects W3GPT.ai, BecomeAGI.com, AIM.tools
+
+Midcurve.live highlights our commitment to transparent AI, with direct community involvement unlike anything done before.

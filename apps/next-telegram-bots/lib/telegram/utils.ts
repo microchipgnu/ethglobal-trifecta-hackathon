@@ -114,30 +114,15 @@ export const messageCtxToAiMessage = (
   const chatId = ctx.chatId;
   const updateId = ctx.update.update_id;
   const messageDateObj = new Date(ctx.msg.date * 1000);
+  const text = ctx.msg.text || '';
+  const caption = ctx.msg.caption || '';
+  const entityTypesString = ctx.msg.entities
+    ? JSON.stringify(ctx.msg.entities.map((entity) => entity.type))
+    : '';
 
-  const contentObject: Record<string, string> = {};
-
-  if (attachments?.length) {
-    // If there are attachments, include full metadata
-    if (ctx.msg.caption) {
-      contentObject.caption = ctx.msg.caption;
-    }
-    if (ctx.msg.text) {
-      contentObject.text = ctx.msg.text;
-    }
-    if (ctx.msg.entities) {
-      contentObject.entities = JSON.stringify(ctx.msg.entities);
-    }
-  } else {
-    // If no attachments, just use the text directly
-    contentObject.text = ctx.msg.text || '';
-  }
-
-  const contentString = JSON.stringify({
-    ...contentObject,
-    userId: ctx.from?.id,
-    chatId,
-  });
+  const contentString = `${text}\n${caption}\nAttachment types: ${entityTypesString}`;
+  console.log('contentString', contentString);
+  console.log('attachments', attachments);
 
   return {
     id: `${chatId}-${updateId}`,

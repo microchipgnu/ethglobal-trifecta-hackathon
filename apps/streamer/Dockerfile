@@ -15,8 +15,8 @@ RUN for i in $(seq 1 3); do \
         if [ $i -lt 3 ]; then sleep 5; fi; \
     done
 
-# Install remaining packages
-RUN apt-get update && apt-get install -y --no-install-recommends --fix-missing chromium xdotool bc gawk && \
+# Install remaining packages including network tools
+RUN apt-get update && apt-get install -y --no-install-recommends --fix-missing chromium xdotool bc gawk netcat-openbsd iputils-ping procps && \
     rm -rf /var/lib/apt/lists/*
 
 # Set up environment variables

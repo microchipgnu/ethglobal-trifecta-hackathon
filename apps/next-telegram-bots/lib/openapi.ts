@@ -139,6 +139,42 @@ export const openApiSpec = createDocument({
     },
   },
   paths: {
+    '/reset-webhooks': {
+      post: {
+        operationId: 'resetWebhooks',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: 'url',
+            in: 'query',
+            schema: {
+              type: 'string',
+            },
+            description: 'Base URL to use for resetting webhooks. If not provided, the default from getBaseUrl() will be used.',
+          },
+        ],
+        responses: {
+          200: {
+            description: 'Webhooks reset successfully',
+            content: {
+              'application/json': {
+                schema: z.object({
+                  success: z.boolean(),
+                  message: z.string(),
+                  count: z.number(),
+                }),
+              },
+            },
+          },
+          401: {
+            description: 'Unauthorized',
+          },
+          500: {
+            description: 'Failed to reset webhooks',
+          },
+        },
+      },
+    },
     '/agent': {
       get: {
         operationId: 'getAgent',

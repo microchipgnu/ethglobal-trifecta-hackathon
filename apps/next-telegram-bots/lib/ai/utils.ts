@@ -65,6 +65,7 @@ export const getSystemPromptWithSessionContext = async ({
   const summarizedUser = {
     telegramId: session?.user?.telegramId,
     firstName: session?.user?.firstName,
+    username: session?.user?.username,
     evmAddress: session?.user?.evmAddress,
     depositHash: session?.user?.depositHash,
     depositAmount: session?.user?.depositAmount,
@@ -74,8 +75,8 @@ export const getSystemPromptWithSessionContext = async ({
   const summarizedChat = {
     telegramChatId: session?.chat?.telegramChatId,
     title: session?.chat?.title,
-    summary: session?.chat?.summary,
-    userIds: session?.chat?.userIds,
+    // summary: session?.chat?.summary,
+    // userIds: session?.chat?.userIds,
   };
 
   return JSON.stringify({

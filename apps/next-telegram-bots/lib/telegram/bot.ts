@@ -97,6 +97,7 @@ export const getBot = async (
         user: undefined,
         chat: undefined,
         agent: undefined,
+        messages: [],
       }),
       storage: new MongoDBAdapter<SessionData>({
         collection: sessions,
@@ -171,36 +172,40 @@ export const getBot = async (
     if (!chatId || !userId) {
       return next();
     }
-    // Only do the initialization work if session is not already populated
-    if (!session.user) {
-      session.user =
-        (await userService.findUser({ telegramId: userId })) ||
-        (await userService.createUser({
-          telegramId: userId,
-          username: ctx.from.username,
-          firstName: ctx.from.first_name,
-        }));
-    }
-    if (!session.chat) {
-      // Create new chat
-      session.chat =
-        (await chatService.findChat({
-          telegramChatId: chatId,
-        })) ||
-        (await chatService.createChat({
-          telegramChatId: chatId,
-          title: ctx.chat?.title,
-          type: ctx.chat?.type || 'private',
-          userIds: [userId],
-          telegramBotId: botId,
-        }));
-    }
 
-    if (!session.agent) {
-      session.agent =
-        (await agentService.findAgent({
-          telegramBotId: botId,
-        })) || undefined;
+    // Always fetch the latest user data from the database
+    session.user =
+      (await userService.findUser({ telegramId: userId })) ||
+      (await userService.createUser({
+        telegramId: userId,
+        username: ctx.from.username,
+        firstName: ctx.from.first_name,
+      }));
+
+    // Always fetch the latest chat data
+    session.chat =
+      (await chatService.findChat({
+        telegramChatId: chatId,
+      })) ||
+      (await chatService.createChat({
+        telegramChatId: chatId,
+        title: ctx.chat?.title,
+        type: ctx.chat?.type || 'private',
+        userIds: [userId],
+        telegramBotId: botId,
+      }));
+
+    // Always fetch the latest agent data
+    session.agent =
+      (await agentService.findAgent({
+        telegramBotId: botId,
+      })) || undefined;
+
+    // Load the last 10 messages for this chat if the messages array is empty
+    if (!session.messages || session.messages.length === 0) {
+      const { messageService } = await getServices();
+      session.messages = await messageService.getMessagesByChatId(chatId, 10);
+      console.log('session.messages', session.messages);
     }
 
     return next();
@@ -210,6 +215,7 @@ export const getBot = async (
   await registerCommandHandlers(bot);
 
   bot.on('message', async (ctx) => {
+    console.log('message', ctx.message);
     const session = await ctx.session;
     const chatId = ctx.chat?.id;
     const userId = ctx.from?.id;
@@ -258,9 +264,8 @@ export const getBot = async (
       }
 
       const aiMessage = messageCtxToAiMessage(ctx, attachments);
-
       // Save the message to the database
-      await messageService.createMessage({
+      const userMessage = await messageService.createMessage({
         messageId: `user-${updateId}`,
         chatId,
         userId,
@@ -269,6 +274,13 @@ export const getBot = async (
         attachments,
       });
 
+      // Add the user message to the session messages
+      session.messages.push(userMessage);
+      // Keep only the last 10 messages
+      if (session.messages.length > 10) {
+        session.messages = session.messages.slice(-10);
+      }
+
       const { text, toolInvocations } = await handleGenerateText({
         chatId,
         agentId: bot.botInfo.id,
@@ -276,13 +288,21 @@ export const getBot = async (
       });
 
       // Save the bot's response to the database
-      await messageService.createMessage({
+      const assistantMessage = await messageService.createMessage({
         messageId: `ai-${updateId}`,
         chatId,
         userId: bot.botInfo.id,
         role: 'assistant',
         content: text,
+        attachments,
       });
+
+      // Add the assistant message to the session messages
+      session.messages.push(assistantMessage);
+      // Keep only the last 10 messages
+      if (session.messages.length > 10) {
+        session.messages = session.messages.slice(-10);
+      }
 
       if (toolInvocations) {
         for (const toolInvocation of toolInvocations) {
@@ -365,7 +385,7 @@ export const getBot = async (
 
       await ctx.reply(text);
     } catch (error) {
-      console.log(error);
+      console.log('ERROR', error);
       console.error('Error handling message:', JSON.stringify(error, null, 2));
 
       // Select a random playful error message

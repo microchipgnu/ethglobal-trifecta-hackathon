@@ -1,27 +1,50 @@
 #!/bin/bash
 
-RTMP_URL=${RTMP_URL:-"rtmp://localhost/live/stream"}
+# Default environment variables for SRS
+# NOTE: If you mapped port 1935 -> 2935 in your docker-compose,
+#       then RTMP_URL should be something like:
+#       rtmp://localhost:2935/live/stream
+RTMP_URL=${RTMP_URL:-"rtmp://srs:1935/live/stream"}
+
+# Add debugging for network connectivity
+echo "Checking connectivity to SRS server..."
+ping -c 2 srs || echo "Cannot ping SRS server - network issue"
+
+RTMP_URL=${RTMP_URL:-"rtmp://srs:1935/live/stream"}
+
+# These are for the noVNC or other VNC server
 TARGET_URL=${TARGET_URL:-"localhost"}
 TARGET_VNC_PORT=${TARGET_VNC_PORT:-"6080"}
 TARGET_VNC_PATH=${TARGET_VNC_PATH:-"/vnc.html?autoconnect=true&view_only=true"}
+
+# Stream settings
 RESOLUTION=${RESOLUTION:-"1280x720"}
 VIDEO_BITRATE=${VIDEO_BITRATE:-"2500k"}
 AUDIO_BITRATE=${AUDIO_BITRATE:-"128k"}
 FPS=${FPS:-30}
 
+# Add debugging for network connectivity
 echo "Starting streamer..."
+echo "Checking connectivity to SRS server..."
+ping -c 2 srs || echo "Cannot ping SRS server - network issue"
 
-# Start Xvfb
+# -----------------------
+# 1) Start Xvfb
+# -----------------------
 Xvfb :99 -screen 0 $RESOLUTION"x24" &
 XVFB_PID=$!
 echo "Started Xvfb with PID: $XVFB_PID"
 
-# Start PulseAudio
+# -----------------------
+# 2) Start PulseAudio
+# -----------------------
 export XDG_RUNTIME_DIR=/tmp/runtime-root
 pulseaudio -D --exit-idle-time=-1
 echo "Started PulseAudio"
 
-# Construct the full target URL if a host is provided
+# -----------------------
+# 3) Construct the target URL
+# -----------------------
 if [[ "$TARGET_URL" == *"://"* ]]; then
   FULL_TARGET_URL="$TARGET_URL"
 else
@@ -31,16 +54,18 @@ else
   echo "Constructed target URL: $FULL_TARGET_URL"
 fi
 
-# Function to clean up processes on exit
+# -----------------------
+# Cleanup function
+# -----------------------
 cleanup() {
     echo "Cleaning up processes..."
-    command -v pkill >/dev/null 2>&1 || echo "pkill command not found, skipping process termination"
+    command -v pkill >/dev/null 2>&1 || echo "pkill command not found, skipping pkill"
     if command -v pkill >/dev/null 2>&1; then
         pkill -f Xvfb
         pkill -f ffmpeg
         pkill -f chromium
     else
-        echo "Using kill for cleanup instead of pkill"
+        echo "Using kill for cleanup"
         kill $(ps aux | grep -E 'Xvfb|ffmpeg|chromium' | grep -v grep | awk '{print $2}') 2>/dev/null || true
     fi
     rm -f /tmp/.X99-lock
@@ -48,49 +73,46 @@ cleanup() {
     exit 0
 }
 
-# Set up trap to catch SIGTERM and SIGINT
 trap cleanup SIGTERM SIGINT
 
-# Clean up any existing X locks
-echo "Cleaning up any existing X locks..."
+echo "Removing any leftover X locks..."
 rm -f /tmp/.X99-lock
 rm -f /tmp/.X11-unix/X99
 
-echo "Starting virtual display with Xvfb..."
-# Start Xvfb (virtual framebuffer) in the background
+# -----------------------
+# 4) Start Xvfb
+# -----------------------
+echo "Starting Xvfb with resolution: $RESOLUTION..."
 Xvfb :99 -screen 0 $RESOLUTION"x24" &
 XVFB_PID=$!
+sleep 2  # Give Xvfb time to start
 
-# Wait for Xvfb to start
-sleep 2
-
-echo "Waiting for VNC interface to become available..."
+# -----------------------
+# 5) Wait for VNC interface (if you rely on it)
+# -----------------------
 MAX_RETRIES=30
 RETRY_COUNT=0
 SUCCESS=false
 
-# Parse hostname from the full target URL
 TARGET_HOST=$(echo "$FULL_TARGET_URL" | sed -e 's|^[^/]*//||' -e 's|[:/].*$||')
 TARGET_PORT=$(echo "$FULL_TARGET_URL" | grep -o ':[0-9]*' | head -1 | cut -d':' -f2)
-TARGET_PORT=${TARGET_VNC_PORT:-80}  # Default to port 80 if none specified
+TARGET_PORT=${TARGET_PORT:-$TARGET_VNC_PORT}  # fallback to $TARGET_VNC_PORT if none found
 
 echo "Checking connectivity to $TARGET_HOST:$TARGET_PORT..."
 while [ $RETRY_COUNT -lt $MAX_RETRIES ] && [ "$SUCCESS" = false ]; do
-    # Check if VNC server is reachable - testing with curl instead of nc
     if curl -s --connect-timeout 2 --max-time 2 --head --fail "http://$TARGET_HOST:$TARGET_PORT" > /dev/null 2>&1; then
         echo "VNC server is available at $TARGET_HOST:$TARGET_PORT, starting Chrome..."
         chromium --no-sandbox --disable-gpu \
             --window-size=${RESOLUTION%x*},${RESOLUTION#*x} \
             --start-maximized \
             --background-color=white \
-            --css-flags="*{cursor:none!important;}" \
             --kiosk "$FULL_TARGET_URL" &
         CHROME_PID=$!
         SUCCESS=true
-        sleep 5  # Give Chrome time to connect
+        sleep 5
     else
         RETRY_COUNT=$((RETRY_COUNT+1))
-        echo "Attempt $RETRY_COUNT/$MAX_RETRIES: VNC server not ready yet, waiting..."
+        echo "Attempt $RETRY_COUNT/$MAX_RETRIES: VNC server not ready, waiting..."
         sleep 5
     fi
 done
@@ -100,20 +122,46 @@ if [ "$SUCCESS" = false ]; then
     exit 1
 fi
 
+# -----------------------
+# 6) Start FFmpeg to RTMP
+# -----------------------
 echo "Starting FFmpeg streaming to $RTMP_URL..."
-# Stream to RTMP using FFmpeg without overlays
-ffmpeg -f x11grab -framerate $FPS -s $RESOLUTION -i :99 \
-    -c:v libx264 -pix_fmt yuv420p -preset veryfast -b:v $VIDEO_BITRATE -maxrate ${VIDEO_BITRATE} -bufsize $VIDEO_BITRATE \
-    -g 60 -keyint_min 60 -x264opts "keyint=60:min-keyint=60:no-scenecut" \
-    -f flv "$RTMP_URL"
 
-# In case ffmpeg exits, clean up
+# Add retry mechanism for FFmpeg
+MAX_FFMPEG_RETRIES=5
+FFMPEG_RETRY_COUNT=0
+FFMPEG_SUCCESS=false
+
+while [ $FFMPEG_RETRY_COUNT -lt $MAX_FFMPEG_RETRIES ] && [ "$FFMPEG_SUCCESS" = false ]; do
+    echo "Attempt $((FFMPEG_RETRY_COUNT+1))/$MAX_FFMPEG_RETRIES: Connecting to RTMP server..."
+    
+    # Try to connect to the RTMP server to check if it's available
+    if nc -z -w5 srs 1935; then
+        echo "RTMP server is available, starting stream..."
+        
+        ffmpeg -f x11grab -framerate "$FPS" -s "$RESOLUTION" -i :99 \
+            -c:v libx264 -pix_fmt yuv420p -preset veryfast \
+            -b:v "$VIDEO_BITRATE" -maxrate "$VIDEO_BITRATE" -bufsize "$VIDEO_BITRATE" \
+            -g 60 -keyint_min 60 -x264opts "keyint=60:min-keyint=60:no-scenecut" \
+            -f flv "$RTMP_URL"
+            
+        # If ffmpeg exits with success, break the loop
+        if [ $? -eq 0 ]; then
+            FFMPEG_SUCCESS=true
+        fi
+    else
+        FFMPEG_RETRY_COUNT=$((FFMPEG_RETRY_COUNT+1))
+        echo "RTMP server not available, waiting before retry..."
+        sleep 10
+    fi
+done
+
+if [ "$FFMPEG_SUCCESS" = false ]; then
+    echo "Failed to connect to RTMP server after $MAX_FFMPEG_RETRIES attempts"
+fi
+
+# If FFmpeg exits, run cleanup
 cleanup
-
-# Cleanup
-echo "Streaming duration complete, shutting down..."
-kill $XVFB_PID
-pulseaudio --kill
 
 echo "Streamer stopped"
 exit 0
