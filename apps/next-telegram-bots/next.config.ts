@@ -1,6 +1,7 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ['https://midcurve.live', 'http://midcurve.live'],
   async headers() {
     return [
       {
