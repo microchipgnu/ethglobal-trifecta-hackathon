@@ -26,4 +26,4 @@ ENV NODE_ENV="production"
 EXPOSE 3420
 
 # Run the application
-CMD ["bun", "run", "--cwd", "apps/next-telegram-bots", "start"]
+CMD ["bun", "run", "--cwd", "apps/next-telegram-bots", "dev"]
