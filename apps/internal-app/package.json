@@ -6,6 +6,7 @@
     "dev": "vite --host",
     "build": "vite build",
     "preview": "vite preview",
+    "serve": "bun run vite preview --host --port 5173",
     "clean": "rm -rf dist node_modules"
   },
   "dependencies": {
