@@ -1,15 +1,5 @@
 #!/bin/bash
 
-# Default environment variables for SRS
-# NOTE: If you mapped port 1935 -> 2935 in your docker-compose,
-#       then RTMP_URL should be something like:
-#       rtmp://localhost:2935/live/stream
-RTMP_URL=${RTMP_URL:-"rtmp://srs:1935/live/stream"}
-
-# Add debugging for network connectivity
-echo "Checking connectivity to SRS server..."
-ping -c 2 srs || echo "Cannot ping SRS server - network issue"
-
 RTMP_URL=${RTMP_URL:-"rtmp://srs:1935/live/stream"}
 
 # These are for the noVNC or other VNC server
