@@ -163,7 +163,12 @@ services:
       - traefik.http.routers.srs.entrypoints=websecure
       - traefik.http.routers.srs.tls.certResolver=letsencrypt
       - traefik.http.services.srs.loadbalancer.server.port=9080
-
+      - traefik.http.middlewares.srs-cors.headers.accessControlAllowMethods=GET,OPTIONS,PUT,POST,DELETE
+      - traefik.http.middlewares.srs-cors.headers.accessControlAllowOriginList=*
+      - traefik.http.middlewares.srs-cors.headers.accessControlAllowHeaders=*
+      - traefik.http.middlewares.srs-cors.headers.accessControlMaxAge=100
+      - traefik.http.middlewares.srs-cors.headers.addVaryHeader=true
+      - traefik.http.routers.srs.middlewares=srs-cors
   redis:
     image: redis:alpine
     container_name: tradestream-redis
