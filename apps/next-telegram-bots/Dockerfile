@@ -21,9 +21,12 @@ RUN bun run --cwd apps/next-telegram-bots build
 # Set env variables and expose the port
 ENV HOST="0.0.0.0"
 ENV PORT="3420"
-ENV NODE_ENV="development"
+ENV NODE_ENV="production"
 
 EXPOSE 3420
 
-# Run the application in development mode
-CMD ["bun", "run", "--cwd", "apps/next-telegram-bots", "dev"]
+# Run the application with performance optimizations:
+# - --no-watch disables file watching 
+# - --no-hot disables hot module replacement
+# - NODE_ENV=production reduces debug overhead
+CMD ["bun", "run", "--cwd", "apps/next-telegram-bots", "dev", "--no-watch", "--no-hot"]
