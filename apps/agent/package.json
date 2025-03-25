@@ -8,7 +8,8 @@
   },
   "scripts": {
     "dev": "bun run src/index.ts",
-    "clean": "rm -rf dist node_modules"
+    "clean": "rm -rf dist node_modules",
+    "cli": "bun run cli.ts"
   },
   "peerDependencies": {
     "typescript": "^5"
@@ -23,5 +24,8 @@
     "rfb2": "^0.2.2",
     "viem": "^2.23.14",
     "zod": "^3.24.2"
+  },
+  "bin": {
+    "agent": "./cli.ts"
   }
 }

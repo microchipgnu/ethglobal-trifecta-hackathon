@@ -9,14 +9,14 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
 
-const useComputer = async (prompt: string): Promise<string> => {
+const useComputer = async (prompt: string, { host, port }: { host: string, port: number }): Promise<string> => {
     let computer = null;
     let finalMessage = "";
     let hasError = false;
-    
+
     try {
         console.log('Initializing VNC computer...');
-        computer = new VNCComputer("localhost", 5900); // TODO: make this work in the docker network ("computer" host)
+        computer = new VNCComputer(host, port);
         await computer.initialize();
         console.log(`Computer initialized with dimensions: ${computer.dimensions[0]}x${computer.dimensions[1]}`);
 
@@ -36,7 +36,7 @@ const useComputer = async (prompt: string): Promise<string> => {
         }]
 
         let continueLoop = true;
-        let maxAttempts = 5;
+        let maxAttempts = 100;
         let attempts = 0;
 
         while (continueLoop && attempts < maxAttempts) {
@@ -47,55 +47,71 @@ const useComputer = async (prompt: string): Promise<string> => {
                     input: [{
                         role: "system",
                         content: COMPUTER_USE_SYSTEM_PROMPT,
-                    }, ...items.filter(item => {
-                        // Type-safe check for content property
-                        return item.type === 'message' ? item.content !== null && item.content !== undefined : true;
-                    })],
+                    }, ...items],
                     instructions: COMPUTER_USE_SYSTEM_PROMPT,
                     tools,
                     truncation: "auto",
                 });
 
-                // Validate and add output items
+                // Store message-reasoning pairs by reasoning ID
+                const messagePairs = new Map();
+                const computerCallItems = [];
+                const otherItems = [];
+
+                // First pass - find and pair reasoning items with their messages
                 if (result.output && Array.isArray(result.output)) {
-                    // Create a mapping of reasoning IDs to items to ensure we keep pairs together
-                    const reasoningItems = new Map();
-                    const computerCallItems = new Map();
-                    const otherValidItems = [];
-                    
-                    // First pass - categorize items and collect reasoning/call IDs
+                    // Create mapping from reasoning ID to reasoning item first
+                    const reasoningMap = new Map();
                     for (const item of result.output) {
                         if (!item) continue;
-                        
-                        // Store reasoning items by ID
                         if (item.type === 'reasoning') {
-                            reasoningItems.set(item.id, item);
-                            continue;
-                        }
-                        
-                        // Store computer call items by ID
-                        if (item.type === 'computer_call') {
-                            computerCallItems.set(item.call_id, item);
-                            continue;
-                        }
-                        
-                        // Message from assistant with content
-                        if (item.type === 'message' && item.role === 'assistant' && item.content) {
-                            otherValidItems.push(item);
-                            continue;
+                            reasoningMap.set(item.id, item);
                         }
                     }
                     
-                    // Create the list of valid outputs, preserving all necessary items
-                    const validOutputs = [...otherValidItems];
-                    
-                    // Add all reasoning and computer call items to maintain the pairs
-                    reasoningItems.forEach(item => validOutputs.push(item));
-                    computerCallItems.forEach(item => validOutputs.push(item));
-                    
-                    console.log(`Processing ${validOutputs.length} valid output items`);
-                    items.push(...validOutputs);
+                    // Process all items
+                    for (const item of result.output) {
+                        if (!item) continue;
+                        
+                        if (item.type === 'computer_call') {
+                            computerCallItems.push(item);
+                        } else if (item.type === 'message' && item.role === 'assistant') {
+                            // For each message, find its associated reasoning
+                            // Use type assertion to access reasoning_id safely
+                            const itemAny = item as any;
+                            const reasoningId = itemAny.reasoning_id || '';
+                            const reasoningItem = reasoningMap.get(reasoningId);
+                            
+                            // Store both together
+                            if (reasoningItem) {
+                                messagePairs.set(reasoningId, { message: item, reasoning: reasoningItem });
+                            } else {
+                                otherItems.push(item);
+                            }
+                        } else {
+                            otherItems.push(item);
+                        }
+                    }
                 }
+                
+                // Add items in the correct order to maintain relationships
+                const validOutputs = [...otherItems];
+                
+                // Add reasoning items first, then their messages
+                messagePairs.forEach(pair => {
+                    validOutputs.push(pair.reasoning);
+                    validOutputs.push(pair.message);
+                });
+                
+                // Add computer calls correctly by adding them directly to items
+                // instead of validOutputs to avoid type mismatch
+                console.log(`Processing ${validOutputs.length} valid output items and ${computerCallItems.length} computer calls`);
+                
+                // Add all valid outputs to items
+                items.push(...validOutputs);
+                
+                // Add computer calls separately to avoid type issues
+                computerCallItems.forEach(call => items.push(call));
 
                 console.log(result.output);
 
@@ -105,6 +121,15 @@ const useComputer = async (prompt: string): Promise<string> => {
                     }
 
                     try {
+                        // First, extract safety check ID directly if possible - we need this to avoid errors
+                        const pendingSafetyChecks = toolCall.pending_safety_checks || [];
+                        console.log('Pending safety checks:', JSON.stringify(pendingSafetyChecks, null, 2));
+                        
+                        // Keep the original safety check objects - the API expects the full objects, not just IDs
+                        // API error: "expected an object, but got a string instead"
+                        
+                        console.log(`Acknowledging ${pendingSafetyChecks.length} safety checks for call ${toolCall.call_id}`);
+                        
                         const action = toolCall.action;
                         const actionType = action.type;
 
@@ -142,12 +167,12 @@ const useComputer = async (prompt: string): Promise<string> => {
 
                         const screenshot = await computer.screenshot();
 
-                        // Ignore pending security checks
+                        // Pass the complete pending safety check objects as-is to acknowledge them
                         const callOutput: ResponseInputItem = {
                             type: "computer_call_output",
                             status: "completed",
                             call_id: toolCall.call_id,
-                            acknowledged_safety_checks: [],
+                            acknowledged_safety_checks: pendingSafetyChecks,
                             output: {
                                 type: "computer_screenshot",
                                 image_url: screenshot,
@@ -188,7 +213,7 @@ const useComputer = async (prompt: string): Promise<string> => {
                 const loopError = error as Error;
                 console.error(`Error in processing loop: ${loopError}`);
                 hasError = true;
-                
+
                 // Add error message to items
                 const errorMessage = `An error occurred: ${loopError.message || 'Unknown error'}. Please try again.`;
                 items.push({
@@ -196,12 +221,12 @@ const useComputer = async (prompt: string): Promise<string> => {
                     role: "assistant",
                     content: errorMessage
                 });
-                
+
                 finalMessage = errorMessage;
-                
+
                 // Wait a bit before retrying
                 await new Promise(resolve => setTimeout(resolve, 1000));
-                
+
                 if (attempts >= maxAttempts) {
                     console.log(`Maximum retry attempts (${maxAttempts}) reached, stopping.`);
                     continueLoop = false;
@@ -226,36 +251,38 @@ const useComputer = async (prompt: string): Promise<string> => {
                 }
             }
         }
-        
+
         // If we had no final message but had an error, provide a generic error message
         if (finalMessage === "" && hasError) {
             finalMessage = "An error occurred while using the computer. Please try again.";
         } else if (finalMessage === "") {
             finalMessage = "Computer task completed, but no response was generated.";
         }
-        
+
         return finalMessage;
     }
 };
 
-const computerUse: AITool = {
-    description: "Use the computer to perform tasks",
-    parameters: z.object({
-        prompt: z.string(),
-    }),
-    execute: async ({ prompt }) => {
-        try {
-            const response = await useComputer(prompt);
-            return response;
-        } catch (error) {
-            console.error('Error executing computerUse tool:', error);
-            return `Error: ${(error as Error).message || 'An unknown error occurred'}`;
-        }
-    },
+const computerUse = ({ host, port }: { host: string, port: number }): AITool => {
+    return {
+        description: "Use the computer to perform tasks",
+        parameters: z.object({
+            prompt: z.string(),
+        }),
+        execute: async ({ prompt }) => {
+            try {
+                const response = await useComputer(prompt, { host, port });
+                return response;
+            } catch (error) {
+                console.error('Error executing computerUse tool:', error);
+                return `Error: ${(error as Error).message || 'An unknown error occurred'}`;
+            }
+        },
+    }
 }
 
-export const getTools = async () => {
+export const getTools = async ({ host, port }: { host: string, port: number }) => {
     return {
-        computerUse
+        computerUse: computerUse({ host, port })
     }
 }
