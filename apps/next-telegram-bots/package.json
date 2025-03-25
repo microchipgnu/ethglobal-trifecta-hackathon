@@ -3,9 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "dev": "dotenv -e ../../.env -- next dev",
+    "dev": "dotenv -e ../../.env -- next dev -p 3420",
     "build": "dotenv -e ../../.env -- next build",
-    "start": "dotenv -e ../../.env -- next start",
+    "start": "dotenv -e ../../.env -- next start -p 3420",
     "reset-webhooks": "dotenv -e ../../.env -- bun lib/telegram/reset-webhooks.ts",
     "test": "dotenv -e ../../.env -- bun test",
     "typecheck": "bun tsc --noEmit"
