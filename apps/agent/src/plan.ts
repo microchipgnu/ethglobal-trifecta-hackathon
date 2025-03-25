@@ -54,11 +54,11 @@ export const generatePlan = async (
     model: openai("gpt-4o"),
     schema: z.object({
       summary: z.string(),
-      reasoning: z.string().min(50).max(500),
+      reasoning: z.string(),
       steps: z.array(z.object({
         id: z.number().int().positive(),
         name: z.string().min(3).max(50),
-        description: z.string().min(20).max(300),
+        description: z.string(),
         suggestedTools: z.array(z.string()).optional(),
         dependsOn: z.array(z.number().int().positive()).optional(),
         complexity: z.number().int().min(1).max(5)
