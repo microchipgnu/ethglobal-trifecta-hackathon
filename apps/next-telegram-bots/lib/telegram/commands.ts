@@ -17,8 +17,10 @@ export async function ensureUserExists(
     username,
   });
 
-  if (!telegramId) {
-    console.error("No telegramId found in context, new User can't be created");
+  if (!telegramId || !username) {
+    console.error(
+      "No telegramId or username found in context, new User can't be created"
+    );
     return;
   }
 

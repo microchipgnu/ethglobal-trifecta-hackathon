@@ -30,6 +30,7 @@ export const taskEntitySchema = z.object({
     .default(TaskStatus.PENDING),
   startedAt: z.date().optional().nullable(),
   completedAt: z.date().optional().nullable(),
+  summary: z.string().optional().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
 });
