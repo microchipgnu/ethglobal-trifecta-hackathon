@@ -55,6 +55,7 @@ export const POST = async (
   req: NextRequest,
   { params }: { params: Promise<{ botToken: string }> }
 ): Promise<NextResponse> => {
+  console.log('POST /api/bot/[botToken] called');
   try {
     const secretToken = req.headers.get('x-telegram-bot-api-secret-token');
     const botToken = (await params).botToken;

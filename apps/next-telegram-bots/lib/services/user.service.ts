@@ -18,22 +18,15 @@ export const userEntitySchema = z.object({
   depositHash: z.string().optional(),
   depositAmount: z.number().optional(),
   totalRewards: z.number().default(0),
+  rewardCooldownDate: z.date().optional().nullable(),
 });
 
 export type UserEntity = z.infer<typeof userEntitySchema>;
 
 // User DTO Schema
 export const userDTOSchema = z.object({
+  ...userEntitySchema.shape,
   id: z.string(),
-  telegramId: userEntitySchema.shape.telegramId,
-  username: userEntitySchema.shape.username,
-  firstName: userEntitySchema.shape.firstName,
-  evmAddress: userEntitySchema.shape.evmAddress,
-  createdAt: userEntitySchema.shape.createdAt,
-  updatedAt: userEntitySchema.shape.updatedAt,
-  depositHash: userEntitySchema.shape.depositHash,
-  depositAmount: userEntitySchema.shape.depositAmount,
-  totalRewards: userEntitySchema.shape.totalRewards,
 });
 
 export type UserDTO = z.infer<typeof userDTOSchema>;
@@ -42,16 +35,29 @@ export type UserDTO = z.infer<typeof userDTOSchema>;
 export const UserDTO = {
   convertFromEntity(entity: UserEntity): UserDTO {
     return userDTOSchema.parse({
+      ...entity,
       id: entity._id.toHexString(),
-      telegramId: entity.telegramId,
-      firstName: entity.firstName,
-      username: entity.username || undefined,
-      evmAddress: entity.evmAddress || undefined,
-      createdAt: entity.createdAt,
-      updatedAt: entity.updatedAt,
-      depositHash: entity.depositHash || undefined,
-      depositAmount: entity.depositAmount || undefined,
-      totalRewards: entity.totalRewards || 0,
+    });
+  },
+};
+
+export const createUserDTOSchema = userDTOSchema.omit({
+  _id: true,
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  deposit: true,
+  evmAddress: true,
+  totalRewards: true,
+  rewardCooldownDate: true,
+  depositHash: true,
+  depositAmount: true,
+});
+export type CreateUserDTO = z.infer<typeof createUserDTOSchema>;
+export const CreateUserDTO = {
+  convertFromDTO(dto: CreateUserDTO): UserDTO {
+    return userDTOSchema.parse({
+      ...dto,
     });
   },
 };
@@ -84,21 +90,9 @@ export class UserService extends BaseService {
     }
   }
 
-  async createUser(
-    dto: Omit<UserDTO, 'id' | 'createdAt' | 'updatedAt' | 'totalRewards'>
-  ): Promise<UserDTO> {
+  async createUser(dto: CreateUserDTO): Promise<UserDTO> {
     try {
-      const now = new Date();
-      const candidate = userEntitySchema
-        .omit({
-          _id: true,
-        })
-        .parse({
-          ...dto,
-          totalRewards: 0,
-          createdAt: now,
-          updatedAt: now,
-        });
+      const candidate = CreateUserDTO.convertFromDTO(dto);
 
       const { insertedId } = await this.getCollection().insertOne(candidate);
       return UserDTO.convertFromEntity({ ...candidate, _id: insertedId });

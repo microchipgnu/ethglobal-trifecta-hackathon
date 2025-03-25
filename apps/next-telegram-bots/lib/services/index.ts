@@ -36,13 +36,14 @@ export const initializeServices = async () => {
     _userService = new UserService(client);
 
     _initialized = true;
+    console.log('Database services initialized');
   } catch (error) {
     console.error('Failed to initialize database services:', error);
     throw error;
   }
 };
 
-export const getServices = async () => {
+export const getAllServices = async () => {
   // Ensure services are initialized
   if (!_initialized) {
     await initializeServices();
@@ -57,7 +58,9 @@ export const getServices = async () => {
 };
 
 // For backwards compatibility and direct access
-export const agentService = async () => (await getServices()).agentService;
-export const chatService = async () => (await getServices()).chatService;
-export const messageService = async () => (await getServices()).messageService;
-export const userService = async () => (await getServices()).userService;
+export const getAgentService = async () =>
+  (await getAllServices()).agentService;
+export const getChatService = async () => (await getAllServices()).chatService;
+export const getMessageService = async () =>
+  (await getAllServices()).messageService;
+export const getUserService = async () => (await getAllServices()).userService;

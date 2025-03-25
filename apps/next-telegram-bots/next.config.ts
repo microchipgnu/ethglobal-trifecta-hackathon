@@ -1,7 +1,11 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  allowedDevOrigins: ['https://midcurve.live', 'http://midcurve.live'],
+  allowedDevOrigins: [
+    'https://midcurve.live',
+    'http://midcurve.live',
+    'markeljan.a.pinggy.link',
+  ],
   async headers() {
     return [
       {

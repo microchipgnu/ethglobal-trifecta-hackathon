@@ -1,70 +1,97 @@
 import { type ToolSet, tool } from 'ai';
-import { parseEther } from 'viem';
+import {
+  createPublicClient,
+  formatEther,
+  http,
+  parseEther,
+  type Address,
+} from 'viem';
 import { z } from 'zod';
 
 import { getBaseUrl } from '@/lib/config';
-import { getServices } from '@/lib/services';
+import { getUserService } from '@/lib/services';
 import { encryptUserId } from '@/lib/telegram/utils';
-import { generateRandomReward } from '@/lib/utils/rewards';
 import { walletClient } from '@/lib/wallet';
+import { generateRandomReward } from '@/lib/utils/rewards';
+import { baseSepolia } from 'viem/chains';
+import { createToolsWithOverrides } from '@/lib/ai/tools/utils';
 
-type ParameterOverrides = Record<string, unknown>;
+const publicClient = createPublicClient({
+  chain: baseSepolia,
+  transport: http(process.env.RPC_PROVIDER_URL),
+});
+const MAXIMUM_COOLDOWN_MS = 2 * 24 * 60 * 60 * 1000; // 2 days
+const COOLDOWN_MULTIPLIER_MS = 4320000; // 1.2 hours per ETH reward
 
-async function updateUserRewards(telegramId: number, amount: number) {
-  const { userService } = await getServices();
+const calculateRewardCooldownDate = (rewardAmount: number) => {
+  if (rewardAmount < 1) {
+    return null;
+  }
+  const now = Date.now();
+
+  if (rewardAmount > 20) {
+    return new Date(now + MAXIMUM_COOLDOWN_MS);
+  }
+
+  const cooldownMs = rewardAmount * COOLDOWN_MULTIPLIER_MS;
+
+  return new Date(now + cooldownMs);
+};
+
+async function updateUserRewards(telegramId: number, rewardAmount: number) {
+  const userService = await getUserService();
   const user = await userService.findUserByTelegramId(telegramId);
   if (!user) return;
 
   await userService.updateUser(
     { telegramId },
-    { totalRewards: (user.totalRewards || 0) + amount }
+    {
+      totalRewards: user.totalRewards + rewardAmount,
+      rewardCooldownDate: calculateRewardCooldownDate(rewardAmount),
+    }
   );
 }
 
+// Create the tool using the createTool function from Vercel AI SDK
 export const getConnectLink = tool({
-  description: 'Get a link for the user to connect their wallet',
+  type: 'function',
   parameters: z.object({
-    telegramId: z.number().describe('The Telegram ID of the user'),
+    userId: z.number().describe('Telegram id of the user'),
   }),
-  execute: async ({ telegramId }) => {
+  description: 'Generates a URL for linking a wallet to a telegram user',
+  execute: async ({ userId }) => {
     try {
-      const link = `${getBaseUrl()}/connect/${encryptUserId(telegramId)}`;
-      return { link, success: true };
+      // Encrypt the user ID to a short string
+      const encryptedId = encryptUserId(userId);
+
+      // Generate the connect URL using the base URL and the encrypted user ID
+      const connectUrl = `${getBaseUrl()}/connect/${encryptedId}`;
+      console.log('Encrypted user ID:', encryptedId);
+
+      // Return the connect URL
+      return { result: connectUrl };
     } catch (error) {
       console.error('Error generating connect link:', error);
-      return { error: 'Failed to generate link', success: false };
+      return { error: 'Failed to generate connect link' };
     }
   },
 });
 
-export const getUserBalance = tool({
+export const getETHBalance = tool({
   type: 'function',
   parameters: z.object({
     userEvmAddress: z
       .string()
       .describe('The evm address of the user to get balance for'),
   }),
-  description: "Get the ETHbalance of a user's wallet",
+  description: 'Get the ETH balance for an evm address',
   execute: async ({ userEvmAddress }) => {
     try {
-      if (!userEvmAddress) {
-        return { error: 'No wallet address found for this user' };
-      }
+      const balance = await publicClient.getBalance({
+        address: userEvmAddress as `0x${string}`,
+      });
 
-      const response = await fetch(
-        `https://api.basescan.org/api?module=account&action=balance&address=${userEvmAddress}&tag=latest&apikey=${process.env.BASESCAN_API}`
-      );
-
-      const data = await response.json();
-
-      if (data.status !== '1') {
-        throw new Error('Failed to fetch balance from Base Network');
-      }
-
-      // Convert from Wei to ETH(1 ETH= 10^18 Wei)
-      const balanceInETH = Number(data.result) / 1e18;
-
-      return { result: balanceInETH };
+      return { result: formatEther(balance) };
     } catch (error) {
       console.error('Error getting balance:', error);
       return { error: 'Failed to get balance' };
@@ -73,157 +100,60 @@ export const getUserBalance = tool({
 });
 
 export const sendETHReward = tool({
-  description: 'Send ETH to a specified address with random reward amount',
+  description: 'Trigger a reward chance for a user.  Jackpot amount is 100 ETH',
   parameters: z.object({
-    to: z
-      .string()
-      .startsWith('0x')
-      .describe('The Ethereum address to send ETH to'),
+    recipient: z.string().describe('The address to send ETH to'),
   }),
-  execute: async ({ to }) => {
-    if (!walletClient.account) {
-      throw new Error('No account connected to wallet client');
-    }
-
+  execute: async ({ recipient }) => {
     try {
-      const { userService } = await getServices();
-      const user = await userService.findUserByEvmAddress(to);
-
+      const userService = await getUserService();
+      const user = await userService.findUserByEvmAddress(recipient);
       if (!user) {
-        return { error: 'User not found for this address' };
+        return { error: 'No registered user found for this address' };
+      }
+      if (user.rewardCooldownDate && user?.rewardCooldownDate > new Date()) {
+        return {
+          error: `User reward cooldown until ${user.rewardCooldownDate}`,
+        };
       }
 
-      if (user.totalRewards >= 20) {
-        return { error: 'User has reached temporary reward limit' };
+      const rewardAmount = generateRandomReward();
+
+      if (rewardAmount === 0) {
+        return { result: 'No reward' };
       }
 
-      const randomReward = generateRandomReward();
-
-      if (randomReward === 0) {
-        return { result: 'No reward this time' };
-      }
-
-      const amount = randomReward.toString();
+      const rewardAmountString = rewardAmount.toString();
 
       const hash = await walletClient.sendTransaction({
-        to: to as `0x${string}`,
-        value: parseEther(amount),
+        to: recipient as Address,
+        value: parseEther(rewardAmountString),
         account: walletClient.account,
-        chain: null,
       });
 
+      const { status } = await publicClient.waitForTransactionReceipt({ hash });
+
       // Update user's total rewards
-      if (user) {
-        await updateUserRewards(user.telegramId, Number.parseFloat(amount));
+      if (status === 'reverted') {
+        return { error: 'Failed to send reward' };
       }
 
-      return { hash, amount };
+      await updateUserRewards(user.telegramId, rewardAmount);
+
+      return { hash, amount: rewardAmount };
     } catch (error) {
       console.error(error);
-      if (error instanceof Error) {
-        return { error: error.message };
-      }
-      return { error: 'Failed to send ETH' };
+      return { error: 'Failed to send reward' };
     }
   },
 });
 
-// Helper function to create tools with parameter overrides
-export const createToolsWithOverrides = (
-  tools: ToolSet,
-  overrides: ParameterOverrides
-): ToolSet => {
-  const result: ToolSet = {};
-
-  for (const [name, originalTool] of Object.entries(tools)) {
-    if (!originalTool) continue;
-
-    // Create a modified tool with updated schema and execution
-    result[name] = tool({
-      type: 'function',
-      description: originalTool.description,
-      // Update the schema to reflect that some parameters are pre-filled
-      parameters:
-        updateParameterSchema(originalTool.parameters, overrides) ||
-        z.object({}),
-      execute: async (args, options) => {
-        // Merge the original args with the overrides
-        const mergedArgs: Record<string, unknown> = { ...(args || {}) };
-
-        // Apply overrides for matching parameter keys
-        for (const key in overrides) {
-          if (key in mergedArgs) {
-            mergedArgs[key] = overrides[key];
-          }
-        }
-
-        // Execute the original tool with the merged args
-        if (originalTool.execute) {
-          return originalTool.execute(mergedArgs, options);
-        }
-        return null;
-      },
-    });
-  }
-
-  return result;
-};
-
-// Helper function to update parameter schema to indicate pre-filled values
-function updateParameterSchema(
-  schema: z.ZodType<unknown> | undefined,
-  overrides: ParameterOverrides
-) {
-  if (!schema || !(schema instanceof z.ZodObject)) {
-    return schema;
-  }
-
-  // Create a new schema with updated descriptions
-  const shape = schema.shape;
-  const newShape: Record<string, z.ZodTypeAny> = {};
-
-  for (const [key, zodType] of Object.entries(shape)) {
-    if (key in overrides) {
-      // Update the description to indicate this parameter is pre-filled
-      if (zodType instanceof z.ZodString) {
-        newShape[key] = zodType.describe(
-          `${
-            zodType.description || ''
-          } (Pre-filled with value from context: ${String(overrides[key])})`
-        );
-      } else {
-        // For other types, we still update the description
-        const originalDescription =
-          (zodType as z.ZodTypeAny)._def?.description || '';
-        const newZodType = zodType as z.ZodTypeAny;
-        if (newZodType.describe) {
-          newShape[key] = newZodType.describe(
-            `${originalDescription} (Pre-filled with value from context: ${String(
-              overrides[key]
-            )})`
-          );
-        } else {
-          newShape[key] = zodType as z.ZodTypeAny;
-        }
-      }
-    } else {
-      newShape[key] = zodType as z.ZodTypeAny;
-    }
-  }
-
-  return z.object(newShape);
-}
-
-export const customTools: ToolSet = {
-  getConnectLink,
-  getUserBalance,
-  sendETHReward,
-};
-
-export const getCustomTools = (userId: number): ToolSet => {
-  const overrides: ParameterOverrides = {
-    userId,
+export const getCustomTools = (userId?: number): ToolSet => {
+  const tools = {
+    getConnectLink,
+    getETHBalance,
+    sendETHReward,
   };
 
-  return createToolsWithOverrides(customTools, overrides);
+  return userId ? createToolsWithOverrides(tools, { userId }) : tools;
 };

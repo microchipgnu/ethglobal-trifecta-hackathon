@@ -20,43 +20,17 @@ export const agentEntitySchema = z.object({
   evmAddress: z.string().optional(),
   description: z.string().optional(),
   imageUrl: z.string().optional(),
+  tools: z.array(z.string()).optional(),
   createdAt: z.date(),
   updatedAt: z.date().optional(),
-  stats: z
-    .object({
-      pings: z.number().default(0),
-      balance: z.number().default(0),
-      exp: z.number().default(0),
-      level: z.number().default(0),
-      cost: z.number().default(0),
-    })
-    .optional(),
-  transactions: z.array(z.string()).optional(),
-  tools: z.array(z.string()).optional(),
 });
 
 export type AgentEntity = z.infer<typeof agentEntitySchema>;
 
 // Agent DTO Schema
 export const agentDTOSchema = z.object({
+  ...agentEntitySchema.shape,
   id: z.string(),
-  name: agentEntitySchema.shape.name,
-  description: agentEntitySchema.shape.description,
-  systemPrompt: agentEntitySchema.shape.systemPrompt,
-  imageUrl: agentEntitySchema.shape.imageUrl,
-  telegramBotToken: agentEntitySchema.shape.telegramBotToken,
-  telegramBotId: agentEntitySchema.shape.telegramBotId,
-  telegramBotUsername: agentEntitySchema.shape.telegramBotUsername,
-  telegramBotCreatorId: agentEntitySchema.shape.telegramBotCreatorId,
-  evmAddress: agentEntitySchema.shape.evmAddress,
-  createdAt: agentEntitySchema.shape.createdAt,
-  updatedAt: agentEntitySchema.shape.updatedAt,
-  // stats
-  stats: agentEntitySchema.shape.stats,
-  // transactions
-  transactions: agentEntitySchema.shape.transactions,
-  // tools
-  tools: agentEntitySchema.shape.tools,
 });
 
 export type AgentDTO = z.infer<typeof agentDTOSchema>;
@@ -65,21 +39,28 @@ export type AgentDTO = z.infer<typeof agentDTOSchema>;
 export const AgentDTO = {
   convertFromEntity(entity: AgentEntity): AgentDTO {
     return agentDTOSchema.parse({
+      ...entity,
       id: entity._id.toHexString(),
-      name: entity.name,
-      description: entity.description,
-      systemPrompt: entity.systemPrompt,
-      imageUrl: entity.imageUrl,
-      telegramBotToken: entity.telegramBotToken,
-      telegramBotId: entity.telegramBotId,
-      telegramBotUsername: entity.telegramBotUsername,
-      telegramBotCreatorId: entity.telegramBotCreatorId,
-      evmAddress: entity.evmAddress,
-      createdAt: entity.createdAt,
-      updatedAt: entity.updatedAt,
-      stats: entity.stats,
-      transactions: entity.transactions,
-      tools: entity.tools,
+    });
+  },
+};
+
+export const createAgentDTOSchema = agentDTOSchema.omit({
+  _id: true,
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  telegramBotId: true,
+  evmAddress: true,
+});
+
+export type CreateAgentDTO = z.infer<typeof createAgentDTOSchema>;
+export const CreateAgentDTO = {
+  convertFromDTO(dto: AgentDTO): CreateAgentDTO {
+    return createAgentDTOSchema.parse({
+      ...dto,
+      telegramBotId: Number.parseInt(dto.telegramBotToken.split(':')[0]),
+      evmAddress: botTokenToAccount(dto.telegramBotToken).address,
     });
   },
 };
@@ -89,16 +70,7 @@ export class AgentService extends BaseService {
     return this.db.collection<WithoutId<AgentEntity>>(AGENTS_COLLECTION);
   }
 
-  async createAgent(
-    dto: Omit<
-      AgentDTO,
-      | 'id'
-      | 'telegramBotId'
-      | 'createdAt'
-      | 'updatedAt'
-      | 'telegramBotCreatorId'
-    >
-  ): Promise<AgentDTO> {
+  async createAgent(dto: CreateAgentDTO): Promise<AgentDTO> {
     try {
       const dtoWithTelegramBotId = {
         ...dto,
@@ -114,13 +86,6 @@ export class AgentService extends BaseService {
           ...dtoWithTelegramBotId,
           createdAt: now,
           updatedAt: now,
-          stats: {
-            pings: 0,
-            balance: 0,
-            exp: 0,
-            level: 0,
-            cost: 0,
-          },
         });
 
       const { insertedId } = await this.getCollection().insertOne(candidate);

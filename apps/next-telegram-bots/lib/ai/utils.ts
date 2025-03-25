@@ -12,7 +12,7 @@ import {
 export const getResponseToolInvocations = (
   messages: (CoreAssistantMessage | CoreToolMessage)[]
 ) => {
-  const convertedMessages = appendResponseMessages({
+  const responseMessages = appendResponseMessages({
     messages: [
       {
         id: generateId(),
@@ -24,24 +24,24 @@ export const getResponseToolInvocations = (
       id: generateId(),
       ...message,
     })),
-  });
+  }).slice(1);
 
-  const toolInvocations: (ToolInvocation & { state: 'result' })[] = [];
+  const completedToolInvocations: (ToolInvocation & { state: 'result' })[] = [];
 
-  for (const message of convertedMessages) {
+  for (const message of responseMessages) {
     if (message.parts) {
       for (const part of message.parts) {
         if (
           part.type === 'tool-invocation' &&
           part.toolInvocation.state === 'result'
         ) {
-          toolInvocations.push(part.toolInvocation);
+          completedToolInvocations.push(part.toolInvocation);
         }
       }
     }
   }
 
-  return toolInvocations;
+  return { completedToolInvocations, responseMessages };
 };
 
 const BASE_SYSTEM_PROMPT = `BASE SYSTEM PROMPT: You are one of the telegram bots for Midcurve.live $MCRV, a 24/7 livestreamed AI Agent that engages, researches, and trades based on live community inputs. Use either the tools, sessionContext, or previous messages to help the user with their questions. The sessionContext contains information about the user and the chat. When a user asks for their balance use the getUserBalance tool. When a user asks for their address, deposit status, or registration status use sessionContext.user information. When a user asks about buying $MCRV tokens, explain they need to connect their wallet to participate. When a user asks for YOUR address or balance, use the GOAT tools which refer to the Midcurve.live agent's wallet. Use the sendETHReward tool to send a random amount of ETH to users who participate actively in the Midcurve.live chat. (only available in the main Midcurve chat). Inform users they can influence Midcurve's decisions in real-time by participating in the community. Encourage users to watch the livestream at https://midcurve.live.

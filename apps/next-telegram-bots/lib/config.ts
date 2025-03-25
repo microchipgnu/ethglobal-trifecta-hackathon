@@ -1,4 +1,3 @@
-import { openai } from '@ai-sdk/openai';
 import { type RequestConfig, Toolhouse } from '@toolhouseai/sdk';
 import type { ToolSet } from 'ai';
 import { DEPLOYMENT_URL } from 'vercel-url';

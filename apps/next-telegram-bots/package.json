@@ -7,7 +7,8 @@
     "build": "dotenv -e ../../.env -- next build",
     "start": "dotenv -e ../../.env -- next start",
     "reset-webhooks": "dotenv -e ../../.env -- bun lib/telegram/reset-webhooks.ts",
-    "test": "dotenv -e ../../.env -- bun test"
+    "test": "dotenv -e ../../.env -- bun test",
+    "typecheck": "bun tsc --noEmit"
   },
   "dependencies": {
     "@ai-sdk/openai": "^1.3.0",

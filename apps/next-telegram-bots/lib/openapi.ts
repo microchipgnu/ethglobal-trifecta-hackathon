@@ -2,13 +2,21 @@ import { z } from 'zod';
 import { createDocument } from 'zod-openapi';
 
 import { getBaseUrl } from '@/lib/config';
-import { agentDTOSchema } from '@/lib/services/agent.service';
-import { userDTOSchema } from '@/lib/services/user.service';
+import {
+  agentDTOSchema,
+  createAgentDTOSchema,
+  agentEntitySchema,
+} from '@/lib/services/agent.service';
+import {
+  userDTOSchema,
+  userEntitySchema,
+  createUserDTOSchema,
+} from '@/lib/services/user.service';
 
 export const openApiSpec = createDocument({
   openapi: '3.1.0',
   info: {
-    title: 'Midcurve.live Telegram Bots API',
+    title: 'Midcurve.live Bots API',
     description: 'Midcurve.live Telegram Bots API reference',
     version: '1.0.0',
   },
@@ -24,153 +32,26 @@ export const openApiSpec = createDocument({
         scheme: 'bearer',
       },
     },
-    schemas: {
-      AgentStats: {
-        type: 'object',
-        properties: {
-          pings: {
-            type: 'number',
-            description: 'Number of times the agent has been pinged',
-            default: 0,
-          },
-          balance: {
-            type: 'number',
-            description: "Agent's current balance in ETH",
-            default: 0,
-          },
-          exp: {
-            type: 'number',
-            description: "Agent's experience points",
-            default: 0,
-          },
-          level: {
-            type: 'number',
-            description: "Agent's current level",
-            default: 0,
-          },
-          cost: {
-            type: 'number',
-            description: "Agent's operation cost",
-            default: 0,
-          },
-        },
-      },
-      Agent: {
-        type: 'object',
-        properties: {
-          id: {
-            type: 'string',
-            description: "Agent's unique identifier",
-          },
-          name: {
-            type: 'string',
-            description: "Agent's name",
-          },
-          description: {
-            type: 'string',
-            description: 'Detailed description of the agent',
-          },
-          systemPrompt: {
-            type: 'string',
-            description: "System prompt for the agent's behavior",
-          },
-          imageUrl: {
-            type: 'string',
-            description: "URL to the agent's image",
-          },
-          telegramBotToken: {
-            type: 'string',
-            description: 'Telegram bot token for the agent',
-          },
-          telegramBotId: {
-            type: 'number',
-            description: 'Telegram bot ID for the agent',
-          },
-          telegramBotUsername: {
-            type: 'string',
-            description: 'Telegram bot username for the agent',
-          },
-          telegramBotCreatorId: {
-            type: 'number',
-            description: 'Telegram ID of the bot creator',
-          },
-          evmAddress: {
-            type: 'string',
-            description: 'EVM address associated with the agent',
-          },
-          createdAt: {
-            type: 'string',
-            format: 'date-time',
-            description: 'Creation timestamp',
-          },
-          updatedAt: {
-            type: 'string',
-            format: 'date-time',
-            description: 'Last update timestamp',
-          },
-          stats: {
-            $ref: '#/components/schemas/AgentStats',
-            description: "Agent's statistics",
-          },
-          transactions: {
-            type: 'array',
-            items: {
-              type: 'string',
-            },
-            description: 'List of transaction IDs associated with the agent',
-          },
-          tools: {
-            type: 'array',
-            items: {
-              type: 'string',
-            },
-            description: 'List of tools available to the agent',
-          },
-        },
-        required: [
-          'id',
-          'name',
-          'systemPrompt',
-          'telegramBotToken',
-          'telegramBotId',
-          'stats',
-        ],
-      },
-    },
   },
   paths: {
-    '/reset-webhooks': {
-      post: {
-        operationId: 'resetWebhooks',
+    '/agents': {
+      get: {
+        operationId: 'getAllAgents',
         security: [{ bearerAuth: [] }],
-        parameters: [
-          {
-            name: 'url',
-            in: 'query',
-            schema: {
-              type: 'string',
-            },
-            description: 'Base URL to use for resetting webhooks. If not provided, the default from getBaseUrl() will be used.',
-          },
-        ],
         responses: {
           200: {
-            description: 'Webhooks reset successfully',
+            description: 'Agents fetched successfully',
             content: {
               'application/json': {
-                schema: z.object({
-                  success: z.boolean(),
-                  message: z.string(),
-                  count: z.number(),
-                }),
+                schema: {
+                  type: 'array',
+                  items: agentEntitySchema,
+                },
               },
             },
           },
           401: {
             description: 'Unauthorized',
-          },
-          500: {
-            description: 'Failed to reset webhooks',
           },
         },
       },
@@ -210,7 +91,7 @@ export const openApiSpec = createDocument({
             description: 'Agent fetched successfully',
             content: {
               'application/json': {
-                schema: agentDTOSchema,
+                schema: agentEntitySchema,
               },
             },
           },
@@ -228,13 +109,7 @@ export const openApiSpec = createDocument({
         requestBody: {
           content: {
             'application/json': {
-              schema: agentDTOSchema.omit({
-                id: true,
-                telegramBotId: true,
-                createdAt: true,
-                updatedAt: true,
-                telegramBotCreatorId: true,
-              }),
+              schema: createAgentDTOSchema,
             },
           },
           description: 'Agent data to create',
@@ -244,7 +119,7 @@ export const openApiSpec = createDocument({
             description: 'Agent created successfully',
             content: {
               'application/json': {
-                schema: agentDTOSchema,
+                schema: agentEntitySchema,
               },
             },
           },
@@ -264,14 +139,6 @@ export const openApiSpec = createDocument({
               type: 'string',
             },
             description: "Agent's unique identifier",
-          },
-          {
-            name: 'telegramBotId',
-            in: 'query',
-            schema: {
-              type: 'number',
-            },
-            description: 'Telegram bot ID associated with the agent',
           },
           {
             name: 'telegramBotUsername',
@@ -307,7 +174,7 @@ export const openApiSpec = createDocument({
             description: 'Agent updated successfully',
             content: {
               'application/json': {
-                schema: agentDTOSchema,
+                schema: agentEntitySchema,
               },
             },
           },
@@ -356,28 +223,6 @@ export const openApiSpec = createDocument({
         },
       },
     },
-    '/agents': {
-      get: {
-        operationId: 'getAllAgents',
-        security: [{ bearerAuth: [] }],
-        responses: {
-          200: {
-            description: 'Agents fetched successfully',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'array',
-                  items: agentDTOSchema,
-                },
-              },
-            },
-          },
-          401: {
-            description: 'Unauthorized',
-          },
-        },
-      },
-    },
     '/user': {
       get: {
         operationId: 'getUser',
@@ -410,7 +255,7 @@ export const openApiSpec = createDocument({
             description: 'User fetched successfully',
             content: {
               'application/json': {
-                schema: userDTOSchema,
+                schema: userEntitySchema,
               },
             },
           },
@@ -428,11 +273,7 @@ export const openApiSpec = createDocument({
         requestBody: {
           content: {
             'application/json': {
-              schema: userDTOSchema.omit({
-                id: true,
-                createdAt: true,
-                updatedAt: true,
-              }),
+              schema: createUserDTOSchema,
             },
           },
         },
@@ -479,11 +320,7 @@ export const openApiSpec = createDocument({
         requestBody: {
           content: {
             'application/json': {
-              schema: userDTOSchema.partial().omit({
-                id: true,
-                createdAt: true,
-                updatedAt: true,
-              }),
+              schema: createUserDTOSchema,
             },
           },
         },
@@ -638,6 +475,43 @@ export const openApiSpec = createDocument({
           },
           500: {
             description: 'Failed to fetch user by address',
+          },
+        },
+      },
+    },
+    '/reset-webhooks': {
+      post: {
+        operationId: 'resetWebhooks',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: 'url',
+            in: 'query',
+            schema: {
+              type: 'string',
+            },
+            description:
+              'Base URL to use for resetting webhooks. If not provided, the default from getBaseUrl() will be used.',
+          },
+        ],
+        responses: {
+          200: {
+            description: 'Webhooks reset successfully',
+            content: {
+              'application/json': {
+                schema: z.object({
+                  success: z.boolean(),
+                  message: z.string(),
+                  count: z.number(),
+                }),
+              },
+            },
+          },
+          401: {
+            description: 'Unauthorized',
+          },
+          500: {
+            description: 'Failed to reset webhooks',
           },
         },
       },

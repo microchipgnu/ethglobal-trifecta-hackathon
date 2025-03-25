@@ -1,5 +1,5 @@
+import { getUserService } from '@/lib/services';
 import { getBaseUrl } from '@/lib/config';
-import { userService } from '@/lib/services';
 import type { MyBot, MyContext } from '@/lib/telegram/types';
 import { encryptUserId } from '@/lib/telegram/utils';
 import { type CommandContext, InlineKeyboard } from 'grammy';
@@ -22,22 +22,22 @@ export async function ensureUserExists(
     return;
   }
 
-  const service = await userService();
+  const userService = await getUserService();
   console.log('UserService initialized');
 
-  let user = await service.findUser({ telegramId });
+  let user = await userService.findUser({ telegramId });
   console.log('User search result:', user);
 
   if (!user) {
-    console.log('User not found, creating new user');
-    user = await service.createUser({
+    console.log(`user ${telegramId} not found, creating new user`);
+    user = await userService.createUser({
       telegramId,
       firstName,
       username,
     });
-    console.log('New user created:', user);
+    console.log(`new user ${user.id} created`);
   } else {
-    console.log('User already exists:', user);
+    console.log(`user ${user.id} exists`);
   }
 }
 

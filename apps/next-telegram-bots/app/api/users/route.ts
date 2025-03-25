@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
-import { userService } from '@/lib/services';
+import { getUserService } from '@/lib/services';
 import { authenticateRequest } from '@/lib/verify-auth-token';
 
 export const GET = async (req: NextRequest) => {
@@ -9,7 +9,8 @@ export const GET = async (req: NextRequest) => {
     if (!isValid) {
       return NextResponse.json({ error }, { status: 401 });
     }
-    const users = await (await userService()).getAllUsers();
+    const userService = await getUserService();
+    const users = await userService.getAllUsers();
 
     return NextResponse.json(users, { status: 200 });
   } catch (error) {

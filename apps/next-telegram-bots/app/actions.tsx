@@ -1,7 +1,7 @@
 'use server';
 
 import { AGENT_WALLET_ADDRESS } from '@/lib/constants';
-import { userService } from '@/lib/services';
+import { getUserService } from '@/lib/services';
 import { decryptUserId } from '@/lib/telegram/utils';
 import { z } from 'zod';
 
@@ -18,10 +18,11 @@ export async function checkSiweStatus(connectedWallet?: string) {
       return false;
     }
 
-    const service = await userService();
+    const userService = await getUserService();
 
     // Find user by the connected wallet address
-    const existingUser = await service.findUserByEvmAddress(connectedWallet);
+    const existingUser =
+      await userService.findUserByEvmAddress(connectedWallet);
 
     if (!existingUser) {
       console.log('User not found or address not linked');
@@ -48,10 +49,11 @@ export async function checkDepositStatus(connectedWallet?: string) {
       return false;
     }
 
-    const service = await userService();
+    const userService = await getUserService();
 
     // Find user by the connected wallet address
-    const existingUser = await service.findUserByEvmAddress(connectedWallet);
+    const existingUser =
+      await userService.findUserByEvmAddress(connectedWallet);
 
     if (!existingUser) {
       console.log('User not found or address not linked');
@@ -92,10 +94,10 @@ export async function updateUserAction(formData: FormData) {
       evmAddress: formData.get('evmAddress'),
     });
 
-    const service = await userService();
+    const userService = await getUserService();
 
     // Find user and check conditions in one database query if possible
-    const existingUser = await service.findUserByTelegramId(
+    const existingUser = await userService.findUserByTelegramId(
       userData.telegramId
     );
 
@@ -110,7 +112,7 @@ export async function updateUserAction(formData: FormData) {
     }
 
     // Update user with simplified query
-    await service.updateUser(
+    await userService.updateUser(
       { telegramId: userData.telegramId },
       { evmAddress: userData.evmAddress }
     );
@@ -132,8 +134,8 @@ export async function checkRegisteredUser(
   evmAddress: string
 ): Promise<boolean> {
   try {
-    const service = await userService();
-    const user = await service.findUserByEvmAddress(evmAddress);
+    const userService = await getUserService();
+    const user = await userService.findUserByEvmAddress(evmAddress);
 
     return !!user;
   } catch (error) {
@@ -147,8 +149,8 @@ export async function updateUserDeposit(
 ): Promise<{ success: boolean; depositHash?: string; message?: string }> {
   try {
     console.log('Fetching user from database...');
-    const service = await userService();
-    const user = await service.findUserByEvmAddress(evmAddress);
+    const userService = await getUserService();
+    const user = await userService.findUserByEvmAddress(evmAddress);
 
     if (!user) {
       console.log('User not found in database');
@@ -195,7 +197,7 @@ export async function updateUserDeposit(
     }
 
     console.log('Updating user deposit in database...');
-    await service.updateUser(
+    await userService.updateUser(
       { evmAddress },
       { depositHash: matchingTx.hash.toString() }
     );

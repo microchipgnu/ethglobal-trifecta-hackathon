@@ -1,7 +1,7 @@
 import { GrammyError } from 'grammy';
 
 import { TELEGRAM_SECRET_TOKEN, getBaseUrl } from '@/lib/config';
-import { agentService } from '@/lib/services';
+import { getAgentService } from '@/lib/services';
 import { getBot } from '@/lib/telegram/bot';
 
 async function handleRateLimit(
@@ -14,7 +14,8 @@ async function handleRateLimit(
 }
 
 async function resetWebhooks(customBaseUrl?: string) {
-  const allAgents = await (await agentService()).getAllAgents();
+  const agentService = await getAgentService();
+  const allAgents = await agentService.getAllAgents();
   const baseUrl = customBaseUrl || getBaseUrl();
   let successCount = 0;
 
@@ -60,11 +61,11 @@ async function resetWebhooks(customBaseUrl?: string) {
   }
 
   console.log(`Reset ${successCount} webhooks to ${baseUrl}`);
-  
+
   return {
     success: true,
     message: `Reset ${successCount} webhooks to ${baseUrl}`,
-    count: successCount
+    count: successCount,
   };
 }
 

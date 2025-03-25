@@ -23,6 +23,7 @@
     "check": "biome check",
     "check:fix": "biome check --write",
     "start": "turbo run start",
+    "typecheck": "turbo run typecheck",
     "clean": "turbo run clean && rm -rf node_modules",
     "docker:build": "docker compose build",
     "docker:build:no-cache": "docker compose build --no-cache",

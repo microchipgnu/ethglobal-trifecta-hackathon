@@ -87,6 +87,24 @@ export class MessageService extends BaseService {
     });
   }
 
+  async createMessages(
+    dtos: Omit<MessageDTO, 'id' | 'createdAt'>[]
+  ): Promise<boolean> {
+    const now = new Date();
+    const candidates = dtos.map((dto) => ({
+      ...dto,
+      createdAt: now,
+    }));
+    const { insertedIds } = await this.getMessagesCollection().insertMany(
+      candidates.map((dto) => ({
+        _id: toObjectId(dto.messageId),
+        ...dto,
+      }))
+    );
+
+    return true;
+  }
+
   async getMessagesByChatId(
     chatId: number,
     limit = 50,

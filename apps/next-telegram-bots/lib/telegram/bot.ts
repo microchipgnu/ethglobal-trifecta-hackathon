@@ -1,5 +1,3 @@
-import { readFileSync, unlinkSync } from 'node:fs';
-import { extname } from 'node:path';
 import { parseJSON } from '@ai-sdk/provider-utils';
 import { hydrateFiles } from '@grammyjs/files';
 import { limit } from '@grammyjs/ratelimiter';
@@ -9,6 +7,8 @@ import type { Attachment } from 'ai';
 import { Bot, lazySession } from 'grammy';
 import type { File as TelegramFile, UserFromGetMe } from 'grammy/types';
 import Redis from 'ioredis';
+import { readFileSync, unlinkSync } from 'node:fs';
+import { extname } from 'node:path';
 import { z } from 'zod';
 
 import { handleGenerateText } from '@/lib/ai/handle-generate-text';
@@ -18,7 +18,11 @@ import {
   SESSIONS_COLLECTION,
 } from '@/lib/constants';
 import client from '@/lib/mongodb';
-import { getServices, initializeServices } from '@/lib/services';
+import {
+  getAllServices,
+  getMessageService,
+  initializeServices,
+} from '@/lib/services';
 import type {
   MyApi,
   MyBot,
@@ -27,6 +31,7 @@ import type {
 } from '@/lib/telegram/types';
 
 import { REDIS_URL } from '@/lib/config';
+import type { MessageDTO } from '@/lib/services/message.service';
 import { registerCommandHandlers } from '@/lib/telegram/commands';
 import { messageCtxToAiMessage } from '@/lib/telegram/utils';
 // Array of playful error messages
@@ -35,25 +40,27 @@ const REPLY_ERROR_MESSAGES = [
   'Analyzing $ETH chart right now, try again later 📈',
   'I am doing some degen research, please try again shortly 🔍',
   "Sorry, I'm in the middle of a yield farming session. Try again in a moment. 🌾",
-  'Hunting for alpha, please stand by and try again soon 🕵️',
+  'Hunting for alpha on Midcurve.live, please stand by and try again soon 🕵️',
 ];
 
 // Array of sassy rate limit messages
 const RATE_LIMIT_MESSAGES = [
-  "You're more repetitive than a failed transaction, @{username} 🔄",
-  'Stop spamming meeegh @{username}! Even $PEPE has more utility than your requests 🐸',
+  "You're more repetitive than a failed ETH transaction, @{username} 🔄",
+  'Stop spamming meeegh @{username}! Even $MCRV has more utility than your requests 🐸',
   "Congrats @{username}, you've discovered how to NOT get rewards. Revolutionary 👏",
   "You're boring @{username}. Try something more creative than spam 🥱",
-  "Hey @{username}, this isn't a memecoin airdrop. Chill with the requests 🧊",
+  "Hey @{username}, this isn't an ETH airdrop. Chill with the requests 🧊",
   "Breaking news: @{username} discovers spamming doesn't increase APY 📰",
-  "Dear @{username}, I'm a degen bot, not your personal slot machine 🎰",
+  "Dear @{username}, I'm a Midcurve bot, not your personal slot machine 🎰",
   "@{username} used SPAM. It's not very effective... 🎮",
-  "I've seen better strategies from people buying at ATH, @{username} 📉",
+  "I've seen better strategies from people buying ETH at ATH, @{username} 📉",
   'Are you trying to DOS me, @{username}? My bags are heavier than your attacks 💰',
 ];
+
 if (!REDIS_URL) {
   throw new Error('REDIS_URL is not set');
 }
+
 const redis = new Redis(REDIS_URL);
 
 const getTooManyRequestsReplyMessage = (username: string) => {
@@ -75,7 +82,7 @@ export const getBot = async (
   const db = client.db(DATABASE_NAME);
 
   // Get services
-  const { agentService, chatService, userService } = await getServices();
+  const { agentService, chatService, userService } = await getAllServices();
 
   const bot: MyBot = new Bot<MyContext, MyApi>(botToken, {
     botInfo,
@@ -103,6 +110,7 @@ export const getBot = async (
         collection: sessions,
       }),
       getSessionKey: (ctx) => {
+        console.log('GET SESSION KEY', ctx.from, ctx.chat);
         return ctx.from === undefined || ctx.chat === undefined
           ? undefined
           : `${ctx.chat.id}/${ctx.from.id}/${botId}`;
@@ -134,9 +142,11 @@ export const getBot = async (
         // Skip rate limiting if not directed to the bot
         if (ctx.chat?.type === 'private') {
           // Always rate limit private chats
+          console.log('RATE LIMITING PRIVATE CHAT', ctx.msg?.sender_chat?.id);
           return ctx.msg?.sender_chat?.id.toString() || ctx.from?.id.toString();
         }
 
+        console.log('RATE LIMITING GROUP CHAT', ctx.msg?.sender_chat?.id);
         // Check if bot is mentioned in group chats
         const isBotMentioned = ctx.message?.entities?.some(
           (entity) =>
@@ -164,6 +174,7 @@ export const getBot = async (
 
   // Add middleware to handle user/chat creation and management
   bot.use(async (ctx, next) => {
+    console.log('MIDCURVE BOT MIDDLEWARE sessions');
     // Only proceed if we have both chatId and userId
     const chatId = ctx.chat?.id;
     const userId = ctx.from?.id;
@@ -203,9 +214,8 @@ export const getBot = async (
 
     // Load the last 10 messages for this chat if the messages array is empty
     if (!session.messages || session.messages.length === 0) {
-      const { messageService } = await getServices();
+      const messageService = await getMessageService();
       session.messages = await messageService.getMessagesByChatId(chatId, 10);
-      console.log('session.messages', session.messages);
     }
 
     return next();
@@ -215,11 +225,13 @@ export const getBot = async (
   await registerCommandHandlers(bot);
 
   bot.on('message', async (ctx) => {
-    console.log('message', ctx.message);
+    console.log('RECEIVED MESSAGE', ctx.message);
     const session = await ctx.session;
     const chatId = ctx.chat?.id;
     const userId = ctx.from?.id;
     const updateId = ctx.update.update_id;
+
+    console.log('SESSION', session);
 
     if (!chatId || !userId) {
       console.error('Missing chatId or userId');
@@ -246,7 +258,7 @@ export const getBot = async (
     }
 
     try {
-      const { messageService } = await getServices();
+      const messageService = await getMessageService();
       const file = ctx.has(':file') ? await ctx.getFile() : undefined;
       let attachments: Attachment[] | undefined;
 
@@ -278,43 +290,39 @@ export const getBot = async (
       session.messages.push(userMessage);
       // Keep only the last 10 messages
       if (session.messages.length > 10) {
-        session.messages = session.messages.slice(-10);
+        session.messages.shift();
       }
 
-      const { text, toolInvocations } = await handleGenerateText({
-        chatId,
-        agentId: bot.botInfo.id,
-        session,
-      });
+      const { text, completedToolInvocations, responseMessages } =
+        await handleGenerateText({
+          chatId,
+          agentId: bot.botInfo.id,
+          session,
+        });
+      const assistantMessages: MessageDTO[] = responseMessages.map(
+        (message) => ({
+          id: message.id,
+          messageId: message.id,
+          content: message.content,
+          role: message.role,
+          chatId,
+          userId,
+          attachments: message.experimental_attachments,
+          createdAt: message.createdAt || new Date(),
+        })
+      );
 
-      // Save the bot's response to the database
-      const assistantMessage = await messageService.createMessage({
-        messageId: `ai-${updateId}`,
-        chatId,
-        userId: bot.botInfo.id,
-        role: 'assistant',
-        content: text,
-        attachments,
-      });
+      await messageService.createMessages(assistantMessages);
 
       // Add the assistant message to the session messages
-      session.messages.push(assistantMessage);
+      session.messages.push(...assistantMessages);
       // Keep only the last 10 messages
       if (session.messages.length > 10) {
         session.messages = session.messages.slice(-10);
       }
 
-      if (toolInvocations) {
-        for (const toolInvocation of toolInvocations) {
-          // add 10 exp to the agent per tool invocation
-          if (session.agent?.stats) {
-            session.agent.stats.exp += 10;
-
-            // set level to exp / 10
-            session.agent.stats.level = Math.floor(
-              session.agent.stats.exp / 10
-            );
-          }
+      if (completedToolInvocations) {
+        for (const toolInvocation of completedToolInvocations) {
           switch (toolInvocation.toolName) {
             case 'getConnectLink': {
               try {

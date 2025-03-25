@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
-import { userService } from '@/lib/services';
+import { getUserService } from '@/lib/services';
 import { userDTOSchema } from '@/lib/services/user.service';
 import { getFilterFromSearchParams } from '@/lib/telegram/utils';
 import { authenticateRequest } from '@/lib/verify-auth-token';
@@ -22,7 +22,8 @@ export const POST = async (req: NextRequest) => {
       })
       .parse(body);
 
-    const user = await (await userService()).createUser(userData);
+    const userService = await getUserService();
+    const user = await userService.createUser(userData);
     return NextResponse.json(user, { status: 201 });
   } catch (error) {
     console.error('Failed to create user:', error);
@@ -44,7 +45,8 @@ export const GET = async (req: NextRequest) => {
       );
     }
 
-    const user = await (await userService()).findUser(filter);
+    const userService = await getUserService();
+    const user = await userService.findUser(filter);
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -79,7 +81,8 @@ export const PUT = async (req: NextRequest) => {
       })
       .parse(body);
 
-    const user = await (await userService()).updateUser(
+    const userService = await getUserService();
+    const user = await userService.updateUser(
       {
         telegramId: userData.telegramId,
       },
@@ -117,7 +120,8 @@ export const DELETE = async (req: NextRequest) => {
       );
     }
 
-    const success = await (await userService()).deleteUser(id);
+    const userService = await getUserService();
+    const success = await userService.deleteUser(id);
 
     if (!success) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });

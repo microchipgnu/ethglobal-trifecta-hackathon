@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
-import { agentService } from '@/lib/services';
+import { getAgentService } from '@/lib/services';
 import { agentDTOSchema } from '@/lib/services/agent.service';
 import { getFilterFromSearchParams } from '@/lib/telegram/utils';
 import { authenticateRequest } from '@/lib/verify-auth-token';
@@ -23,7 +23,8 @@ export const POST = async (req: NextRequest) => {
       })
       .parse(body);
 
-    const agent = await (await agentService()).createAgent(agentData);
+    const agentService = await getAgentService();
+    const agent = await agentService.createAgent(agentData);
 
     return NextResponse.json(agent, { status: 201 });
   } catch (error) {
@@ -45,7 +46,8 @@ export const GET = async (req: NextRequest) => {
       );
     }
 
-    const agent = await (await agentService()).findAgent(filter);
+    const agentService = await getAgentService();
+    const agent = await agentService.findAgent(filter);
     return NextResponse.json(agent, { status: 200 });
   } catch (error) {
     console.error('Failed to fetch agent:', error);
@@ -82,7 +84,8 @@ export const PUT = async (req: NextRequest) => {
       );
     }
 
-    const agent = await (await agentService()).updateAgent(filter, agentData);
+    const agentService = await getAgentService();
+    const agent = await agentService.updateAgent(filter, agentData);
 
     if (!agent) {
       return NextResponse.json({ error: 'Agent not found' }, { status: 404 });

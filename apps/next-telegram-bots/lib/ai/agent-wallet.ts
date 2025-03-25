@@ -1,10 +1,10 @@
-import crypto from 'node:crypto';
 import { tool } from 'ai';
+import crypto from 'node:crypto';
 import { privateKeyToAccount } from 'viem/accounts';
 import { z } from 'zod';
 
 import { NEXT_TG_SECRET } from '@/lib/config';
-import { agentService } from '@/lib/services';
+import { getAgentService } from '@/lib/services';
 
 // Function to derive a deterministic private key for the agent
 export function botTokenToAccount(telegramBotToken: string): {
@@ -53,13 +53,11 @@ export const experimental_createAgent = tool({
   description: 'Creates a new agent with the specified parameters.',
   execute: async ({ name, systemPrompt, telegramBotToken }) => {
     try {
-      const { address } = botTokenToAccount(telegramBotToken);
-
-      const agent = await (await agentService()).createAgent({
+      const agentService = await getAgentService();
+      const agent = await agentService.createAgent({
         name,
         systemPrompt,
         telegramBotToken,
-        evmAddress: address,
       });
 
       return {

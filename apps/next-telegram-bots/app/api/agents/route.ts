@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
-import { agentService } from '@/lib/services';
+import { getAgentService } from '@/lib/services';
 import { authenticateRequest } from '@/lib/verify-auth-token';
 
 export const GET = async (req: NextRequest) => {
@@ -9,7 +9,8 @@ export const GET = async (req: NextRequest) => {
     if (!isValid) {
       return NextResponse.json({ error }, { status: 401 });
     }
-    const agents = await (await agentService()).getAllAgents();
+    const agentService = await getAgentService();
+    const agents = await agentService.getAllAgents();
 
     return NextResponse.json(agents, { status: 200 });
   } catch (error) {
