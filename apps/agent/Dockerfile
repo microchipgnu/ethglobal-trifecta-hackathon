@@ -17,4 +17,4 @@ RUN bun install
 COPY ./apps/agent/src ./src
 
 # Start the application
-CMD ["bun", "src/index.ts"] 
+CMD ["bun", "src/loop.ts"] 
