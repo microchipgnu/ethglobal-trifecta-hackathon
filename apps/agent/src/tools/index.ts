@@ -29,7 +29,7 @@ export const getToolsGroup = async (group: string): Promise<ToolSet> => {
             return combinedTools;
         }
         case "computer":
-            return await getComputerTools({ host: "localhost", port: 5900 }) as ToolSet;
+            return await getComputerTools({ host: "computer", port: 5900 }) as ToolSet;
         case "general":
             return await getToolhouseTools() as ToolSet;
         default:
