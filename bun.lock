@@ -19,11 +19,16 @@
         "@ai-sdk/openai": "^1.3.0",
         "@coinbase/agentkit": "^0.4.0",
         "@coinbase/agentkit-vercel-ai-sdk": "^0.1.0",
+        "@goat-sdk/adapter-vercel-ai": "^0.2.10",
+        "@goat-sdk/core": "^0.4.9",
+        "@goat-sdk/plugin-erc20": "^0.2.14",
+        "@goat-sdk/wallet-evm": "^0.2.11",
+        "@goat-sdk/wallet-viem": "^0.2.12",
         "@toolhouseai/sdk": "^1.1.7",
         "ai": "^4.2.0",
         "openai": "^4.89.0",
         "rfb2": "^0.2.2",
-        "viem": "^2.23.14",
+        "viem": "^2.23.4",
         "zod": "^3.24.2",
       },
       "devDependencies": {
@@ -446,6 +451,8 @@
     "@goat-sdk/adapter-vercel-ai": ["@goat-sdk/adapter-vercel-ai@0.2.10", "", { "dependencies": { "@goat-sdk/core": "0.4.9", "ai": "4.0.3" }, "peerDependencies": { "zod": "^3.0.0" } }, "sha512-1noBvOSppbxkWfQ07xqk8DkBTZb0LgQBpLRlkFKb2H/dX2whg4SJoPP58n/YpjZuVMak21MvF7vl7NQqJmYseg=="],
 
     "@goat-sdk/core": ["@goat-sdk/core@0.4.9", "", { "dependencies": { "reflect-metadata": "0.2.2" }, "peerDependencies": { "zod": "^3.0.0" } }, "sha512-Z152kNW/iTd89t2Z59+rTGlr/XGZ0eSDzXFu8jEZfwKrr2p6AZ5JWNAe0RrVc1LcZLsXU1oGxjGytxKGyXMB7Q=="],
+
+    "@goat-sdk/plugin-erc20": ["@goat-sdk/plugin-erc20@0.2.14", "", { "dependencies": { "@goat-sdk/core": "0.4.9", "@goat-sdk/wallet-evm": "0.2.11", "viem": "2.23.4", "zod": "3.23.8" } }, "sha512-YfHAupZYn5ioEHKA7OzV80s9L43D2TW+3p0ET8vQiognIKTwNN7HeYxKhR2eC0UHYp+B5RwyvZjuogpta5GPiw=="],
 
     "@goat-sdk/wallet-evm": ["@goat-sdk/wallet-evm@0.2.11", "", { "dependencies": { "@goat-sdk/core": "0.4.9", "abitype": "^1.0.6", "viem": "2.23.4", "zod": "3.23.8" } }, "sha512-87FY4/SwpG2Vee7yAvJ7ywnTkC9q6F3KWbOCtXco09+yr6lnnh7xqoQd4xrpVMaoqvA6eCigqFCtF357thK7ig=="],
 
@@ -2467,6 +2474,10 @@
 
     "@goat-sdk/adapter-vercel-ai/ai": ["ai@4.0.3", "", { "dependencies": { "@ai-sdk/provider": "1.0.1", "@ai-sdk/provider-utils": "2.0.2", "@ai-sdk/react": "1.0.2", "@ai-sdk/ui-utils": "1.0.2", "@opentelemetry/api": "1.9.0", "jsondiffpatch": "0.6.0", "zod-to-json-schema": "^3.23.5" }, "peerDependencies": { "react": "^18 || ^19 || ^19.0.0-rc", "zod": "^3.0.0" }, "optionalPeers": ["react", "zod"] }, "sha512-nx5cNMldOQ72hwxL60NLtRnsmQd5Bo887Wznvxt8F5xnmjdeXRpz4ixp+0xGA88X7wiCn6c+xrhGEb9fesi/Tw=="],
 
+    "@goat-sdk/plugin-erc20/viem": ["viem@2.23.4", "", { "dependencies": { "@noble/curves": "1.8.1", "@noble/hashes": "1.7.1", "@scure/bip32": "1.6.2", "@scure/bip39": "1.5.4", "abitype": "1.0.8", "isows": "1.0.6", "ox": "0.6.7", "ws": "8.18.0" }, "peerDependencies": { "typescript": ">=5.0.4" }, "optionalPeers": ["typescript"] }, "sha512-UQquuolKlS1w5H5e0Fd1KKoUlIPJryIEBzY5AUhGyV1ka+9O6+3uYVhUzj6RbvGK0PtsMKn2ddwPZFwjNDVU/A=="],
+
+    "@goat-sdk/plugin-erc20/zod": ["zod@3.23.8", "", {}, "sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g=="],
+
     "@goat-sdk/wallet-evm/viem": ["viem@2.23.4", "", { "dependencies": { "@noble/curves": "1.8.1", "@noble/hashes": "1.7.1", "@scure/bip32": "1.6.2", "@scure/bip39": "1.5.4", "abitype": "1.0.8", "isows": "1.0.6", "ox": "0.6.7", "ws": "8.18.0" }, "peerDependencies": { "typescript": ">=5.0.4" }, "optionalPeers": ["typescript"] }, "sha512-UQquuolKlS1w5H5e0Fd1KKoUlIPJryIEBzY5AUhGyV1ka+9O6+3uYVhUzj6RbvGK0PtsMKn2ddwPZFwjNDVU/A=="],
 
     "@goat-sdk/wallet-evm/zod": ["zod@3.23.8", "", {}, "sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g=="],
@@ -2762,6 +2773,10 @@
     "@goat-sdk/adapter-vercel-ai/ai/@ai-sdk/react": ["@ai-sdk/react@1.0.2", "", { "dependencies": { "@ai-sdk/provider-utils": "2.0.2", "@ai-sdk/ui-utils": "1.0.2", "swr": "^2.2.5", "throttleit": "2.1.0" }, "peerDependencies": { "react": "^18 || ^19 || ^19.0.0-rc", "zod": "^3.0.0" }, "optionalPeers": ["react", "zod"] }, "sha512-VQfQ6PMiUz4hDquAfjih0DIw4gsQvRFk91SFg2xWirDO4swMZByJzqGGcILPQKbww5ndCo48iZj9S1mLKZo5Dg=="],
 
     "@goat-sdk/adapter-vercel-ai/ai/@ai-sdk/ui-utils": ["@ai-sdk/ui-utils@1.0.2", "", { "dependencies": { "@ai-sdk/provider": "1.0.1", "@ai-sdk/provider-utils": "2.0.2", "zod-to-json-schema": "^3.23.5" }, "peerDependencies": { "zod": "^3.0.0" }, "optionalPeers": ["zod"] }, "sha512-hHrUdeThGHu/rsGZBWQ9PjrAU9Htxgbo9MFyR5B/aWoNbBeXn1HLMY1+uMEnXL5pRPlmyVRjgIavWg7UgeNDOw=="],
+
+    "@goat-sdk/plugin-erc20/viem/ox": ["ox@0.6.7", "", { "dependencies": { "@adraffy/ens-normalize": "^1.10.1", "@noble/curves": "^1.6.0", "@noble/hashes": "^1.5.0", "@scure/bip32": "^1.5.0", "@scure/bip39": "^1.4.0", "abitype": "^1.0.6", "eventemitter3": "5.0.1" }, "peerDependencies": { "typescript": ">=5.4.0" }, "optionalPeers": ["typescript"] }, "sha512-17Gk/eFsFRAZ80p5eKqv89a57uXjd3NgIf1CaXojATPBuujVc/fQSVhBeAU9JCRB+k7J50WQAyWTxK19T9GgbA=="],
+
+    "@goat-sdk/plugin-erc20/viem/ws": ["ws@8.18.0", "", { "peerDependencies": { "bufferutil": "^4.0.1", "utf-8-validate": ">=5.0.2" }, "optionalPeers": ["bufferutil", "utf-8-validate"] }, "sha512-8VbfWfHLbbwu3+N6OKsOMpBdT4kXPDDB9cJk2bJ6mh9ucxdlnNvH1e+roYkKmN9Nxw2yjz7VzeO9oOz2zJ04Pw=="],
 
     "@goat-sdk/wallet-evm/viem/ox": ["ox@0.6.7", "", { "dependencies": { "@adraffy/ens-normalize": "^1.10.1", "@noble/curves": "^1.6.0", "@noble/hashes": "^1.5.0", "@scure/bip32": "^1.5.0", "@scure/bip39": "^1.4.0", "abitype": "^1.0.6", "eventemitter3": "5.0.1" }, "peerDependencies": { "typescript": ">=5.4.0" }, "optionalPeers": ["typescript"] }, "sha512-17Gk/eFsFRAZ80p5eKqv89a57uXjd3NgIf1CaXojATPBuujVc/fQSVhBeAU9JCRB+k7J50WQAyWTxK19T9GgbA=="],
 

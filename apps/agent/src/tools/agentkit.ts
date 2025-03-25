@@ -1,22 +1,10 @@
-import { AgentKit, compoundActionProvider, defillamaActionProvider, erc20ActionProvider, erc721ActionProvider, jupiterActionProvider, openseaActionProvider, pythActionProvider, ViemWalletProvider, walletActionProvider, wethActionProvider, wowActionProvider, } from "@coinbase/agentkit";
+import { AgentKit, compoundActionProvider, defillamaActionProvider, erc20ActionProvider, erc721ActionProvider, jupiterActionProvider, pythActionProvider, ViemWalletProvider, walletActionProvider, wethActionProvider, wowActionProvider } from "@coinbase/agentkit";
 import { getVercelAITools } from "@coinbase/agentkit-vercel-ai-sdk";
-import { createWalletClient, http } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
-import { sepolia } from "viem/chains";
+import walletClient from "../wallet";
 
 export const getTools = async () => {
-    const account = privateKeyToAccount(
-        process.env.PRIVATE_KEY! as `0x${string}`
-    );
-    
-    const client = createWalletClient({
-      account,
-      chain: sepolia,
-      transport: http(),
-    });
-    
-    const walletProvider = new ViemWalletProvider(client);
-    
+    const walletProvider = new ViemWalletProvider(walletClient);    
+
     const agentKit = await AgentKit.from({
         walletProvider,
         actionProviders: [
@@ -34,8 +22,6 @@ export const getTools = async () => {
     });
     // TODO: it says it's not async, but it is. KEEP IT
     const tools = await getVercelAITools(agentKit);
-
-    console.log(tools);
 
     return tools;
 }
