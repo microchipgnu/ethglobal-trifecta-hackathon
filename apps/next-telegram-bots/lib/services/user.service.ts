@@ -56,8 +56,11 @@ export const createUserDTOSchema = userDTOSchema.omit({
 export type CreateUserDTO = z.infer<typeof createUserDTOSchema>;
 export const CreateUserDTO = {
   convertFromDTO(dto: CreateUserDTO): UserDTO {
+    const now = new Date();
     return userDTOSchema.parse({
       ...dto,
+      createdAt: now,
+      updatedAt: now,
     });
   },
 };
