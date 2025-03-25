@@ -3,13 +3,10 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
-  "devDependencies": {
-    "@types/bun": "latest"
-  },
   "scripts": {
-    "dev": "bun run src/index.ts",
+    "dev": "dotenv -e ../../.env -- bun run src/index.ts",
     "clean": "rm -rf dist node_modules",
-    "cli": "bun run cli.ts"
+    "cli": "dotenv -e ../../.env -- bun run cli.ts"
   },
   "peerDependencies": {
     "typescript": "^5"
@@ -24,6 +21,11 @@
     "rfb2": "^0.2.2",
     "viem": "^2.23.14",
     "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "dotenv-cli": "^8.0.0",
+    "@types/bun": "latest",
+    "@types/node": "^20"
   },
   "bin": {
     "agent": "./cli.ts"
