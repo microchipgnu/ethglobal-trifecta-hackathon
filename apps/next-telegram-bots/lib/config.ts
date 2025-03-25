@@ -26,7 +26,7 @@ export const getTools = async (
   return (await toolhouse.getTools(bundle, requestConfig)) as ToolSet;
 };
 
-const APP_URL = 'https://midcurve.live';
+const APP_URL = process.env.APP_URL || 'https://bots.midcurve.live';
 const isProduction = process.env.NODE_ENV === 'production';
 
 export const getBaseUrl = () => {
