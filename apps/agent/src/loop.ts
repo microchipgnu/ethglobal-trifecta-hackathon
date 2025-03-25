@@ -18,3 +18,5 @@ export const loop = async () => {
         console.log(response);
     }
 }
+
+loop();
