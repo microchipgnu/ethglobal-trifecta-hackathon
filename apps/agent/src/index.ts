@@ -9,9 +9,9 @@ import { CLASSIFICATION_PROMPT } from "./prompts";
 import { setAgentState } from "./state/agent";
 import { setLastUsedTool } from "./state/tools";
 
-export const executePrompt = async (prompt: string) => {
+export const executePrompt = async (prompt: string, {host, port}: {host: string, port: number}) => {
     const agentkitTools = await getAgentkitTools();
-    const computerTools = await getComputerTools();
+    const computerTools = await getComputerTools({host, port});
     const toolhouseTools = await getToolhouseTools();
 
     redisClient.append("messages", {
