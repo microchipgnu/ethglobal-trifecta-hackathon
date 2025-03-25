@@ -61,6 +61,7 @@ export const CreateUserDTO = {
       ...dto,
       createdAt: now,
       updatedAt: now,
+      totalRewards: 0,
     });
   },
 };
