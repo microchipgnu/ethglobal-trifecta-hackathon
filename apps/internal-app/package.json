@@ -3,10 +3,10 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "dev": "vite --host",
-    "build": "vite build",
-    "preview": "vite preview",
-    "serve": "bun run vite preview --host --port 5173",
+    "dev": "dotenv -e ../../.env -- vite --host",
+    "build": "dotenv -e ../../.env -- vite build",
+    "preview": "dotenv -e ../../.env -- vite preview",
+    "serve": "dotenv -e ../../.env -- bun run vite preview --host --port 5173",
     "clean": "rm -rf dist node_modules"
   },
   "dependencies": {
@@ -17,6 +17,7 @@
   },
   "devDependencies": {
     "@types/bun": "1.2.5",
+    "dotenv-cli": "^8.0.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "@vitejs/plugin-react": "^4.3.4",
