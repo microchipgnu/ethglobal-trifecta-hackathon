@@ -10,14 +10,14 @@ export const userEntitySchema = z.object({
   _id: z.instanceof(ObjectId),
   telegramId: z.number(),
   firstName: z.string(),
-  username: z.string().optional(),
-  evmAddress: z.string().optional(),
+  username: z.string(),
   createdAt: z.date(),
   updatedAt: z.date(),
+  totalRewards: z.number().default(0),
+  evmAddress: z.string().optional(),
   deposit: z.string().optional(),
   depositHash: z.string().optional(),
   depositAmount: z.number().optional(),
-  totalRewards: z.number().default(0),
   rewardCooldownDate: z.date().optional().nullable(),
 });
 

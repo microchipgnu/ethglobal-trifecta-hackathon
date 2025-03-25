@@ -17,7 +17,8 @@ export const TaskStatus = {
 export const taskEntitySchema = z.object({
   _id: z.instanceof(ObjectId),
   creatorTelegramId: z.number(),
-  creatorEVMAddress: z.string().optional(),
+  creatorTelegramUsername: z.string(),
+  creatorEVMAddress: z.string(),
   prompt: z.string(),
   status: z
     .enum([
@@ -58,6 +59,7 @@ export const createTaskDTOSchema = taskDTOSchema.omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+  status: true,
 });
 export type CreateTaskDTO = z.infer<typeof createTaskDTOSchema>;
 export const CreateTaskDTO = {
@@ -67,6 +69,7 @@ export const CreateTaskDTO = {
       ...dto,
       createdAt: now,
       updatedAt: now,
+      status: TaskStatus.PENDING,
     };
   },
 };
@@ -94,6 +97,18 @@ export class TaskService extends BaseService {
       return entity ? TaskDTO.convertFromEntity(entity) : null;
     } catch (error) {
       console.error('Error finding task:', error);
+      throw error;
+    }
+  }
+
+  async findTasks(filter: Filter<TaskEntity>): Promise<TaskDTO[]> {
+    try {
+      const entities = await this.getCollection().find(filter).toArray();
+      return entities.map((entity: TaskEntity) =>
+        TaskDTO.convertFromEntity(entity)
+      );
+    } catch (error) {
+      console.error('Error finding tasks:', error);
       throw error;
     }
   }

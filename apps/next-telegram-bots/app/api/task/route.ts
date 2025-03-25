@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { getTaskService } from '@/lib/services';
 import { toObjectId } from '@/lib/telegram/utils';
 import { authenticateRequest } from '@/lib/verify-auth-token';
+import { createTaskDTOSchema } from '@/lib/services/tasks.service';
 
 export const GET = async (req: NextRequest) => {
   try {
@@ -50,8 +51,10 @@ export const POST = async (req: NextRequest) => {
     }
 
     const data = await req.json();
+    // use json schema to validate the data
+    const validatedData = createTaskDTOSchema.parse(data);
     const taskService = await getTaskService();
-    const task = await taskService.createTask(data);
+    const task = await taskService.createTask(validatedData);
 
     return NextResponse.json(task, { status: 201 });
   } catch (error) {

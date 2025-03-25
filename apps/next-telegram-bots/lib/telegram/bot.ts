@@ -180,7 +180,10 @@ export const getBot = async (
     const userId = ctx.from?.id;
     const session = await ctx.session;
 
-    if (!chatId || !userId) {
+    if (!chatId || !userId || !ctx.from?.username) {
+      console.error(
+        `Missing expected info for user ${ctx.from?.id} in chat ${ctx.chat?.id}`
+      );
       return next();
     }
 
