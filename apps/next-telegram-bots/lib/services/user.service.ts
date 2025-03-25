@@ -55,14 +55,14 @@ export const createUserDTOSchema = userDTOSchema.omit({
 });
 export type CreateUserDTO = z.infer<typeof createUserDTOSchema>;
 export const CreateUserDTO = {
-  convertFromDTO(dto: CreateUserDTO): UserDTO {
+  convertFromDTO(dto: CreateUserDTO): WithoutId<UserEntity> {
     const now = new Date();
-    return userDTOSchema.parse({
+    return {
       ...dto,
       createdAt: now,
       updatedAt: now,
       totalRewards: 0,
-    });
+    };
   },
 };
 
@@ -99,7 +99,11 @@ export class UserService extends BaseService {
       const candidate = CreateUserDTO.convertFromDTO(dto);
 
       const { insertedId } = await this.getCollection().insertOne(candidate);
-      return UserDTO.convertFromEntity({ ...candidate, _id: insertedId });
+      const entity: UserEntity = {
+        ...candidate,
+        _id: insertedId,
+      };
+      return UserDTO.convertFromEntity(entity);
     } catch (error) {
       console.error('Error creating user:', error);
       throw error;
