@@ -1,20 +1,20 @@
 import { type ToolSet, tool } from 'ai';
 import {
+  http,
+  type Address,
   createPublicClient,
   formatEther,
-  http,
   parseEther,
-  type Address,
 } from 'viem';
 import { z } from 'zod';
 
+import { createToolsWithOverrides } from '@/lib/ai/tools/utils';
 import { getBaseUrl } from '@/lib/config';
 import { getUserService } from '@/lib/services';
 import { encryptUserId } from '@/lib/telegram/utils';
-import { walletClient } from '@/lib/wallet';
 import { generateRandomReward } from '@/lib/utils/rewards';
+import { walletClient } from '@/lib/wallet';
 import { baseSepolia } from 'viem/chains';
-import { createToolsWithOverrides } from '@/lib/ai/tools/utils';
 
 const publicClient = createPublicClient({
   chain: baseSepolia,

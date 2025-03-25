@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useRef, useCallback, useState, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type ReactPlayerType from 'react-player/lazy';
 
 const ReactPlayer = dynamic(() => import('react-player/lazy'), {

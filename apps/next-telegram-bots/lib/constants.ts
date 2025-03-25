@@ -4,11 +4,12 @@ export const CHATS_COLLECTION = 'chats';
 export const MESSAGES_COLLECTION = 'messages';
 export const USERS_COLLECTION = 'users';
 export const SESSIONS_COLLECTION = 'sessions';
+export const TASKS_COLLECTION = 'tasks';
 
 export const MAX_BLOB_FILE_SIZE = 20 * 1024 * 1024;
 
 export const AGENT_WALLET_ADDRESS =
-  '0x6942025BAdBd8EF351A7F9D14959ECd2A961205d';
+  process.env.ADDRESS || '0x6942025BAdBd8EF351A7F9D14959ECd2A961205d';
 
 const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY;
 

@@ -1,7 +1,8 @@
 // Store data in Redis using our internal-api endpoints
 
 // Default API URL - should be configured based on your environment
-const API_BASE_URL = process.env.INTERNAL_API_URL || 'http://localhost:3030/api/';
+const API_BASE_URL =
+  process.env.INTERNAL_API_URL || 'http://localhost:3030/api/';
 
 export interface DataMetadata {
   createdAt?: string;
@@ -63,9 +64,9 @@ export class RedisClient {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
-      const responseData = await response.json() as GetDataResponse;
-      if (responseData && responseData.data) {
+
+      const responseData = (await response.json()) as GetDataResponse;
+      if (responseData?.data) {
         try {
           return JSON.parse(responseData.data);
         } catch (e) {
@@ -91,15 +92,15 @@ export class RedisClient {
         },
         body: JSON.stringify({
           key,
-          value
-        })
+          value,
+        }),
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
-      const responseData = await response.json() as SuccessResponse;
+
+      const responseData = (await response.json()) as SuccessResponse;
       return responseData && responseData.success;
     } catch (error) {
       console.error('Error setting data in Redis:', error);
@@ -110,7 +111,11 @@ export class RedisClient {
   /**
    * Store data with expiration time
    */
-  async setEx(key: string, expireSeconds: number, value: any): Promise<boolean> {
+  async setEx(
+    key: string,
+    expireSeconds: number,
+    value: any
+  ): Promise<boolean> {
     try {
       const response = await fetch(`${this.apiUrl}/data/expire`, {
         method: 'POST',
@@ -120,16 +125,16 @@ export class RedisClient {
         body: JSON.stringify({
           key,
           value,
-          expireSeconds
-        })
+          expireSeconds,
+        }),
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
-      const responseData = await response.json() as SuccessResponse;
-      return responseData && responseData.success;
+
+      const responseData = (await response.json()) as SuccessResponse;
+      return responseData?.success ?? false;
     } catch (error) {
       console.error('Error setting data with expiration in Redis:', error);
       throw error;
@@ -148,15 +153,15 @@ export class RedisClient {
         },
         body: JSON.stringify({
           value,
-          maxItems
-        })
+          maxItems,
+        }),
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
-      const responseData = await response.json() as AppendResponse;
+
+      const responseData = (await response.json()) as AppendResponse;
       return responseData.newLength;
     } catch (error) {
       console.error('Error appending data in Redis:', error);
@@ -175,15 +180,15 @@ export class RedisClient {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          by
-        })
+          by,
+        }),
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
-      const responseData = await response.json() as IncrementResponse;
+
+      const responseData = (await response.json()) as IncrementResponse;
       return responseData.newValue;
     } catch (error) {
       console.error('Error incrementing value in Redis:', error);
@@ -202,15 +207,15 @@ export class RedisClient {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          by
-        })
+          by,
+        }),
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
-      const responseData = await response.json() as IncrementResponse;
+
+      const responseData = (await response.json()) as IncrementResponse;
       return responseData.newValue;
     } catch (error) {
       console.error('Error decrementing value in Redis:', error);
@@ -226,12 +231,12 @@ export class RedisClient {
       const response = await fetch(`${this.apiUrl}/data/${key}`, {
         method: 'DELETE',
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
-      const responseData = await response.json() as SuccessResponse;
+
+      const responseData = (await response.json()) as SuccessResponse;
       return responseData && responseData.success;
     } catch (error) {
       console.error('Error deleting key from Redis:', error);
@@ -242,7 +247,11 @@ export class RedisClient {
   /**
    * Store structured data with metadata
    */
-  async setStructured<T>(key: string, data: T, metadata: DataMetadata = {}): Promise<boolean> {
+  async setStructured<T>(
+    key: string,
+    data: T,
+    metadata: DataMetadata = {}
+  ): Promise<boolean> {
     try {
       const response = await fetch(`${this.apiUrl}/data/structured`, {
         method: 'POST',
@@ -252,16 +261,16 @@ export class RedisClient {
         body: JSON.stringify({
           key,
           data,
-          metadata
-        })
+          metadata,
+        }),
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
-      const responseData = await response.json() as SuccessResponse;
-      return responseData && responseData.success;
+
+      const responseData = (await response.json()) as SuccessResponse;
+      return responseData?.success ?? false;
     } catch (error) {
       console.error('Error storing structured data in Redis:', error);
       throw error;
@@ -271,7 +280,11 @@ export class RedisClient {
   /**
    * Update structured data
    */
-  async updateStructured<T>(key: string, data: T, metadata: DataMetadata = {}): Promise<boolean> {
+  async updateStructured<T>(
+    key: string,
+    data: T,
+    metadata: DataMetadata = {}
+  ): Promise<boolean> {
     try {
       const response = await fetch(`${this.apiUrl}/data/structured/${key}`, {
         method: 'PUT',
@@ -280,16 +293,16 @@ export class RedisClient {
         },
         body: JSON.stringify({
           data,
-          metadata
-        })
+          metadata,
+        }),
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
-      const responseData = await response.json() as SuccessResponse;
-      return responseData && responseData.success;
+
+      const responseData = (await response.json()) as SuccessResponse;
+      return responseData?.success ?? false;
     } catch (error) {
       console.error('Error updating structured data in Redis:', error);
       throw error;
@@ -301,13 +314,15 @@ export class RedisClient {
    */
   async getLastUsedTools(limit = 10): Promise<any[]> {
     try {
-      const response = await fetch(`${this.apiUrl}/last-used-tools?limit=${limit}`);
-      
+      const response = await fetch(
+        `${this.apiUrl}/last-used-tools?limit=${limit}`
+      );
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
-      const responseData = await response.json() as LastUsedToolsResponse;
+
+      const responseData = (await response.json()) as LastUsedToolsResponse;
       return responseData.tools || [];
     } catch (error) {
       console.error('Error getting last used tools from Redis:', error);
@@ -323,18 +338,23 @@ export class RedisClient {
     try {
       const data = await this.get(key);
       if (!data) return null;
-      
+
       // Check if the data follows the StructuredData format
-      if (data && typeof data === 'object' && 'data' in data && 'metadata' in data) {
+      if (
+        data &&
+        typeof data === 'object' &&
+        'data' in data &&
+        'metadata' in data
+      ) {
         return data as StructuredData<T>;
       }
-      
+
       // If not, wrap it in StructuredData format
       return {
         data: data as T,
         metadata: {
-          retrievedAt: new Date().toISOString()
-        }
+          retrievedAt: new Date().toISOString(),
+        },
       };
     } catch (error) {
       console.error('Error getting structured data from Redis:', error);
@@ -364,9 +384,9 @@ export class RedisClient {
       const results = await Promise.all(
         Object.entries(pairs).map(([key, value]) => this.set(key, value))
       );
-      
+
       // Check if all operations were successful
-      return results.every(result => result === true);
+      return results.every((result) => result === true);
     } catch (error) {
       console.error('Error setting multiple values in Redis:', error);
       throw error;
@@ -380,17 +400,20 @@ export class RedisClient {
     try {
       // Use Promise.all to get values in parallel
       const results = await Promise.all(
-        keys.map(async key => {
+        keys.map(async (key) => {
           const value = await this.get(key);
           return { key, value };
         })
       );
-      
+
       // Convert array of results to an object
-      return results.reduce((acc, { key, value }) => {
-        acc[key] = value;
-        return acc;
-      }, {} as Record<string, any>);
+      return results.reduce(
+        (acc, { key, value }) => {
+          acc[key] = value;
+          return acc;
+        },
+        {} as Record<string, any>
+      );
     } catch (error) {
       console.error('Error getting multiple values from Redis:', error);
       throw error;
@@ -401,4 +424,3 @@ export class RedisClient {
 // Export a default instance to use
 const redisClient = new RedisClient();
 export default redisClient;
-

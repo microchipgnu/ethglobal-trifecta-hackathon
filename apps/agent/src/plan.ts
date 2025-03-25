@@ -1,6 +1,6 @@
-import { openai } from "@ai-sdk/openai";
-import { generateObject } from "ai";
-import { z } from "zod";
+import { openai } from '@ai-sdk/openai';
+import { generateObject } from 'ai';
+import { z } from 'zod';
 
 // Define the structure for a single step in the plan
 export type PlanStep = {
@@ -41,28 +41,35 @@ export const generatePlan = async (
   prompt: string,
   availableTools?: Tool[]
 ): Promise<Plan> => {
-  let toolsContext = "";
-  
+  let toolsContext = '';
+
   if (availableTools?.length) {
     // Include both tool names and descriptions
-    toolsContext = "\nAvailable tools:\n" + availableTools.map(tool => 
-      `- ${tool.name}: ${tool.description}`
-    ).join("\n");
+    toolsContext =
+      '\nAvailable tools:\n' +
+      availableTools
+        .map((tool) => `- ${tool.name}: ${tool.description}`)
+        .join('\n');
   }
 
   const { object: plan } = await generateObject({
-    model: openai("gpt-4o"),
+    model: openai('gpt-4o'),
     schema: z.object({
       summary: z.string(),
       reasoning: z.string(),
-      steps: z.array(z.object({
-        id: z.number().int().positive(),
-        name: z.string().min(3).max(50),
-        description: z.string(),
-        suggestedTools: z.array(z.string()).optional(),
-        dependsOn: z.array(z.number().int().positive()).optional(),
-        complexity: z.number().int().min(1).max(5)
-      })).min(1).max(10)
+      steps: z
+        .array(
+          z.object({
+            id: z.number().int().positive(),
+            name: z.string().min(3).max(50),
+            description: z.string(),
+            suggestedTools: z.array(z.string()).optional(),
+            dependsOn: z.array(z.number().int().positive()).optional(),
+            complexity: z.number().int().min(1).max(5),
+          })
+        )
+        .min(1)
+        .max(10),
     }),
     prompt: `
       Create a step-by-step plan to accomplish the following task:
@@ -92,14 +99,17 @@ export const generatePlan = async (
  * @param completedStepIds Array of completed step IDs
  * @returns boolean indicating if step is ready to execute
  */
-export const isStepReady = (step: PlanStep, completedStepIds: number[]): boolean => {
+export const isStepReady = (
+  step: PlanStep,
+  completedStepIds: number[]
+): boolean => {
   // If no dependencies, step is ready
   if (!step.dependsOn || step.dependsOn.length === 0) {
     return true;
   }
-  
+
   // Step is ready if all dependencies are in the completed steps
-  return step.dependsOn.every(depId => completedStepIds.includes(depId));
+  return step.dependsOn.every((depId) => completedStepIds.includes(depId));
 };
 
 /**
@@ -108,8 +118,12 @@ export const isStepReady = (step: PlanStep, completedStepIds: number[]): boolean
  * @param completedStepIds IDs of steps already completed
  * @returns Array of steps that are ready to execute
  */
-export const getNextExecutableSteps = (plan: Plan, completedStepIds: number[] = []): PlanStep[] => {
-  return plan.steps.filter(step => 
-    !completedStepIds.includes(step.id) && isStepReady(step, completedStepIds)
+export const getNextExecutableSteps = (
+  plan: Plan,
+  completedStepIds: number[] = []
+): PlanStep[] => {
+  return plan.steps.filter(
+    (step) =>
+      !completedStepIds.includes(step.id) && isStepReady(step, completedStepIds)
   );
 };

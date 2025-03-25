@@ -4,13 +4,18 @@ import { createDocument } from 'zod-openapi';
 import { getBaseUrl } from '@/lib/config';
 import {
   agentDTOSchema,
-  createAgentDTOSchema,
   agentEntitySchema,
+  createAgentDTOSchema,
 } from '@/lib/services/agent.service';
 import {
+  createTaskDTOSchema,
+  taskDTOSchema,
+  taskEntitySchema,
+} from '@/lib/services/tasks.service';
+import {
+  createUserDTOSchema,
   userDTOSchema,
   userEntitySchema,
-  createUserDTOSchema,
 } from '@/lib/services/user.service';
 
 export const openApiSpec = createDocument({
@@ -512,6 +517,238 @@ export const openApiSpec = createDocument({
           },
           500: {
             description: 'Failed to reset webhooks',
+          },
+        },
+      },
+    },
+    '/tasks': {
+      get: {
+        operationId: 'getAllTasks',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: {
+            description: 'Tasks fetched successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: taskDTOSchema,
+                },
+              },
+            },
+          },
+          401: {
+            description: 'Unauthorized',
+          },
+          500: {
+            description: 'Failed to fetch tasks',
+          },
+        },
+      },
+    },
+    '/task': {
+      get: {
+        operationId: 'getTask',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: 'id',
+            in: 'query',
+            schema: {
+              type: 'string',
+            },
+            description: "Task's unique identifier",
+          },
+          {
+            name: 'creatorTelegramId',
+            in: 'query',
+            schema: {
+              type: 'number',
+            },
+            description: 'Telegram ID of the task creator',
+          },
+        ],
+        responses: {
+          200: {
+            description: 'Task fetched successfully',
+            content: {
+              'application/json': {
+                schema: taskEntitySchema,
+              },
+            },
+          },
+          401: {
+            description: 'Unauthorized',
+          },
+          404: {
+            description: 'Task not found',
+          },
+        },
+      },
+      post: {
+        operationId: 'createTask',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: createTaskDTOSchema,
+            },
+          },
+          description: 'Task data to create',
+        },
+        responses: {
+          201: {
+            description: 'Task created successfully',
+            content: {
+              'application/json': {
+                schema: taskDTOSchema,
+              },
+            },
+          },
+          401: {
+            description: 'Unauthorized',
+          },
+        },
+      },
+      put: {
+        operationId: 'updateTask',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: 'id',
+            in: 'query',
+            required: true,
+            schema: {
+              type: 'string',
+            },
+            description: "Task's unique identifier",
+          },
+        ],
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: taskDTOSchema.partial().omit({
+                id: true,
+                createdAt: true,
+                updatedAt: true,
+              }),
+            },
+          },
+          description: 'Fields to update on the task',
+        },
+        responses: {
+          200: {
+            description: 'Task updated successfully',
+            content: {
+              'application/json': {
+                schema: taskDTOSchema,
+              },
+            },
+          },
+          400: {
+            description: 'Bad request',
+          },
+          401: {
+            description: 'Unauthorized',
+          },
+          404: {
+            description: 'Task not found',
+          },
+        },
+      },
+      delete: {
+        operationId: 'deleteTask',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: 'id',
+            in: 'query',
+            required: true,
+            schema: {
+              type: 'string',
+            },
+            description: "Task's unique identifier to delete",
+          },
+        ],
+        responses: {
+          200: {
+            description: 'Task deleted successfully',
+            content: {
+              'application/json': {
+                schema: z.object({
+                  success: z.boolean(),
+                }),
+              },
+            },
+          },
+          401: {
+            description: 'Unauthorized',
+          },
+          404: {
+            description: 'Task not found',
+          },
+        },
+      },
+    },
+    '/task/status/{id}': {
+      put: {
+        operationId: 'updateTaskStatus',
+        summary: 'Update a task status with state validation',
+        description:
+          'Updates a task status while enforcing valid state transitions. Tasks must move through states in the correct sequence (pending → in_progress → completed). Failed state can be applied from any state except completed.',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: {
+              type: 'string',
+            },
+            description: "Task's unique identifier",
+          },
+        ],
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: z.object({
+                status: z.enum([
+                  'pending',
+                  'in_progress',
+                  'completed',
+                  'failed',
+                ]),
+              }),
+            },
+          },
+          description: 'New status for the task',
+        },
+        responses: {
+          200: {
+            description: 'Task status updated successfully',
+            content: {
+              'application/json': {
+                schema: taskDTOSchema,
+              },
+            },
+          },
+          400: {
+            description: 'Invalid state transition',
+            content: {
+              'application/json': {
+                schema: z.object({
+                  error: z.string(),
+                  currentTask: taskDTOSchema.optional(),
+                  validValues: z.array(z.string()).optional(),
+                }),
+              },
+            },
+          },
+          401: {
+            description: 'Unauthorized',
+          },
+          404: {
+            description: 'Task not found',
           },
         },
       },

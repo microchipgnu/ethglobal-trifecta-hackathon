@@ -1,11 +1,12 @@
-
 import React, { useEffect, useRef } from 'react';
 
 interface AnimatedBackgroundProps {
   className?: string;
 }
 
-const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({ className }) => {
+const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
+  className,
+}) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -47,7 +48,7 @@ const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({ className }) =>
 
         if (this.x > canvas.width) this.x = 0;
         else if (this.x < 0) this.x = canvas.width;
-        
+
         if (this.y > canvas.height) this.y = 0;
         else if (this.y < 0) this.y = canvas.height;
       }
@@ -85,7 +86,7 @@ const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({ className }) =>
 
     const particlesArray: Particle[] = [];
     const particleCount = Math.min(Math.floor(window.innerWidth / 20), 50);
-    
+
     for (let i = 0; i < particleCount; i++) {
       particlesArray.push(new Particle());
     }
@@ -93,12 +94,12 @@ const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({ className }) =>
     const animate = () => {
       if (!ctx) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
+
       for (let i = 0; i < particlesArray.length; i++) {
         particlesArray[i].update();
         particlesArray[i].draw();
       }
-      
+
       connect(particlesArray);
       requestAnimationFrame(animate);
     };

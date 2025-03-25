@@ -38,7 +38,7 @@ async function redisExamples() {
     await redisClient.set('counter', 10);
     const incremented = await redisClient.incrBy('counter', 5);
     console.log('Incremented counter:', incremented); // 15
-    
+
     const decremented = await redisClient.decrBy('counter', 3);
     console.log('Decremented counter:', decremented); // 12
 
@@ -46,42 +46,45 @@ async function redisExamples() {
     const postData = {
       title: 'Using Redis with TypeScript',
       content: 'This is a tutorial on using Redis with TypeScript',
-      tags: ['redis', 'typescript', 'tutorial']
+      tags: ['redis', 'typescript', 'tutorial'],
     };
-    
+
     const metadata: DataMetadata = {
       author: 'John Doe',
       category: 'Programming',
-      isPublished: true
+      isPublished: true,
     };
-    
+
     await redisClient.setStructured('post:1', postData, metadata);
     const post = await redisClient.getStructured<typeof postData>('post:1');
     console.log('Post with metadata:', post);
-    
+
     // Checking if a key exists
     const exists = await redisClient.exists('post:1');
     console.log('Post:1 exists:', exists);
-    
+
     // Working with multiple keys at once
     await redisClient.mset({
       'multi:1': 'First value',
       'multi:2': 'Second value',
-      'multi:3': 'Third value'
+      'multi:3': 'Third value',
     });
-    
-    const multiValues = await redisClient.mget(['multi:1', 'multi:2', 'multi:3']);
+
+    const multiValues = await redisClient.mget([
+      'multi:1',
+      'multi:2',
+      'multi:3',
+    ]);
     console.log('Multiple values:', multiValues);
-    
+
     // Deleting a key
     await redisClient.del('temp_key');
     const deletedValue = await redisClient.get('temp_key');
     console.log('Deleted value (should be null):', deletedValue);
-    
+
     // Getting last used tools (for specific API)
     const lastTools = await redisClient.getLastUsedTools(5);
     console.log('Last 5 used tools:', lastTools);
-
   } catch (error) {
     console.error('Error in Redis examples:', error);
   }
@@ -91,7 +94,7 @@ async function redisExamples() {
 if (require.main === module) {
   redisExamples()
     .then(() => console.log('Redis examples completed'))
-    .catch(error => console.error('Redis examples failed:', error));
+    .catch((error) => console.error('Redis examples failed:', error));
 }
 
-export default redisExamples; 
+export default redisExamples;

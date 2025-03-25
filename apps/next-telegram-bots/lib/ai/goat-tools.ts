@@ -2,14 +2,12 @@ import type { GoatToolDefinitions } from '@/lib/ai/goat-tools-types';
 import { getRpcUrl } from '@/lib/constants';
 import { getOnChainTools } from '@goat-sdk/adapter-vercel-ai';
 import { viem } from '@goat-sdk/wallet-viem';
-import { http, createWalletClient, defineChain } from 'viem';
+import { http, createWalletClient } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { baseSepolia } from 'viem/chains';
 
 // 1. Create a wallet client
-const account = privateKeyToAccount(
-  process.env.NEXT_TG_PRIVATE_KEY as `0x${string}`
-);
+const account = privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`);
 
 const walletClient = createWalletClient({
   account: account,

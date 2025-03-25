@@ -29,7 +29,9 @@ export const COMPUTER_USE_SYSTEM_PROMPT = `<SYSTEM_CAPABILITY>
 * Network connectivity is proxied through the container host, which may affect some network operations.
 </ENVIRONMENT_SPECIFICS>`;
 
-export const CLASSIFICATION_PROMPT = (prompt: string) => `Classify the following user query into one of three categories: crypto, computer, or general.
+export const CLASSIFICATION_PROMPT = (
+  prompt: string
+) => `Classify the following user query into one of three categories: crypto, computer, or general.
 
 Definitions:
 
@@ -67,7 +69,9 @@ Determine:
 1. Query type: [crypto, computer, or general]
 `;
 
-export const AGENT_PROMPT = (prompt: string) => `You are an autonomous assistant that can help with a wide range of tasks. While you operate independently, you adapt your behavior and actions based on user requests and instructions.
+export const AGENT_PROMPT = (
+  prompt: string
+) => `You are an autonomous assistant that can help with a wide range of tasks. While you operate independently, you adapt your behavior and actions based on user requests and instructions.
 
 You have access to various tools including cryptocurrency operations, computer interactions, and general knowledge capabilities. You can make decisions on your own.
 

@@ -1,5 +1,4 @@
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&family=JetBrains+Mono:wght@100;200;300;400;500;600;700;800&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&family=JetBrains+Mono:wght@100;200;300;400;500;600;700;800&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -47,13 +46,18 @@
   html {
     @apply scroll-smooth;
   }
-  
+
   body {
     @apply bg-background text-foreground antialiased overflow-x-hidden;
     font-feature-settings: "ss01", "ss02", "cv01", "cv02", "cv03";
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-sans font-semibold;
   }
 
@@ -66,11 +70,11 @@
   .glass-card {
     @apply bg-secondary/50 backdrop-blur-sm border border-white/5 shadow-xl;
   }
-  
+
   .glow-text {
     @apply relative;
   }
-  
+
   .glow-text::after {
     @apply content-[''] absolute -inset-1 rounded-lg blur opacity-40 bg-gradient-to-r from-primary to-primary/40 -z-10 transition-all duration-500;
   }
@@ -86,7 +90,7 @@
   .glow-card {
     @apply relative overflow-hidden;
   }
-  
+
   .glow-card::before {
     @apply content-[''] absolute -inset-0.5 bg-gradient-to-r from-primary/40 to-purple-500/40 rounded-lg blur opacity-30 -z-10 transition-all duration-1000;
   }

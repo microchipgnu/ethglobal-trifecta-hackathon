@@ -11,7 +11,7 @@ export default defineConfig({
     port: process.env.PORT ? Number.parseInt(process.env.PORT) : 5173,
     strictPort: true,
     watch: {
-      ignored: ['**/node_modules/**', '**/dist/**', '**/.git/**']
+      ignored: ['**/node_modules/**', '**/dist/**', '**/.git/**'],
     },
     // Allow all hosts to make requests to the dev server
     cors: true,

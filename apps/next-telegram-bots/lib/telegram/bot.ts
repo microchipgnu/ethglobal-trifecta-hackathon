@@ -1,3 +1,5 @@
+import { readFileSync, unlinkSync } from 'node:fs';
+import { extname } from 'node:path';
 import { parseJSON } from '@ai-sdk/provider-utils';
 import { hydrateFiles } from '@grammyjs/files';
 import { limit } from '@grammyjs/ratelimiter';
@@ -7,8 +9,6 @@ import type { Attachment } from 'ai';
 import { Bot, lazySession } from 'grammy';
 import type { File as TelegramFile, UserFromGetMe } from 'grammy/types';
 import Redis from 'ioredis';
-import { readFileSync, unlinkSync } from 'node:fs';
-import { extname } from 'node:path';
 import { z } from 'zod';
 
 import { handleGenerateText } from '@/lib/ai/handle-generate-text';

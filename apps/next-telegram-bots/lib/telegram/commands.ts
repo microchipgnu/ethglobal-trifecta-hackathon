@@ -1,5 +1,5 @@
-import { getUserService } from '@/lib/services';
 import { getBaseUrl } from '@/lib/config';
+import { getUserService } from '@/lib/services';
 import type { MyBot, MyContext } from '@/lib/telegram/types';
 import { encryptUserId } from '@/lib/telegram/utils';
 import { type CommandContext, InlineKeyboard } from 'grammy';
