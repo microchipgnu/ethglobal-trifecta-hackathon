@@ -15,6 +15,7 @@ export const PrivyProvider = ({ children }: { children: React.ReactNode }) => {
         embeddedWallets: {
           createOnLogin: 'users-without-wallets',
         },
+        loginMethods: ['telegram', 'wallet'],
         defaultChain: baseSepolia,
         supportedChains: [base, baseSepolia],
       }}
