@@ -296,9 +296,9 @@ export const getPendingTasks = tool({
   execute: async () => {
     const taskService = await getTaskService();
     const tasks = await taskService.findTasks({
-      status: TaskStatus.PENDING,
+      filter: { status: TaskStatus.PENDING },
       limit: 5,
-      sort: { createdAt: 1 },
+      order: 'asc',
     });
     const simplifiedTasks = tasks.map((task) => ({
       id: task.id,
@@ -315,9 +315,9 @@ export const getCompletedTasks = tool({
   execute: async () => {
     const taskService = await getTaskService();
     const tasks = await taskService.findTasks({
-      status: TaskStatus.COMPLETED,
+      filter: { status: TaskStatus.COMPLETED },
       limit: 5,
-      sort: { createdAt: -1 },
+      order: 'desc',
     });
     const simplifiedTasks = tasks.map((task) => ({
       id: task.id,

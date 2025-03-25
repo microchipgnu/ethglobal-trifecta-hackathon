@@ -13,6 +13,14 @@ export const TaskStatus = {
   FAILED: 'failed',
 } as const;
 
+// Define the status order priority
+const statusOrder = {
+  [TaskStatus.IN_PROGRESS]: 1,
+  [TaskStatus.PENDING]: 2,
+  [TaskStatus.COMPLETED]: 3,
+  [TaskStatus.FAILED]: 4,
+};
+
 // Task Entity Schema
 export const taskEntitySchema = z.object({
   _id: z.instanceof(ObjectId),
@@ -79,11 +87,22 @@ export class TaskService extends BaseService {
   private getCollection() {
     return this.db.collection<WithoutId<TaskEntity>>(TASKS_COLLECTION);
   }
-
   async getAllTasks(): Promise<TaskDTO[]> {
     try {
+      // Get all tasks
       const entities = await this.getCollection().find({}).toArray();
-      return entities.map((entity: TaskEntity) =>
+
+      // Sort tasks by status priority and then by createdAt (oldest first)
+      const sortedEntities = entities.sort((a, b) => {
+        // First sort by status priority
+        const statusComparison = statusOrder[a.status] - statusOrder[b.status];
+        if (statusComparison !== 0) return statusComparison;
+
+        // Then sort by createdAt (oldest first)
+        return a.createdAt.getTime() - b.createdAt.getTime();
+      });
+
+      return sortedEntities.map((entity: TaskEntity) =>
         TaskDTO.convertFromEntity(entity)
       );
     } catch (error) {
@@ -102,10 +121,39 @@ export class TaskService extends BaseService {
     }
   }
 
-  async findTasks(filter: Filter<TaskEntity>): Promise<TaskDTO[]> {
+  async findTasks({
+    filter = {
+      status: {
+        $in: [TaskStatus.IN_PROGRESS, TaskStatus.PENDING],
+      },
+    },
+    order = 'desc',
+    limit = 5,
+  }: {
+    filter?: Filter<TaskEntity>;
+    order?: 'asc' | 'desc';
+    limit?: number;
+  }): Promise<TaskDTO[]> {
     try {
-      const entities = await this.getCollection().find(filter).toArray();
-      return entities.map((entity: TaskEntity) =>
+      const entities = await this.getCollection()
+        .find(filter)
+        .sort({ createdAt: order === 'asc' ? 1 : -1 })
+        .limit(limit)
+        .toArray();
+
+      // Sort tasks by status priority and then by createdAt
+      const sortedEntities = entities.sort((a, b) => {
+        // First sort by status priority
+        const statusComparison = statusOrder[a.status] - statusOrder[b.status];
+        if (statusComparison !== 0) return statusComparison;
+
+        // Then sort by createdAt using the requested order
+        return order === 'asc'
+          ? a.createdAt.getTime() - b.createdAt.getTime()
+          : b.createdAt.getTime() - a.createdAt.getTime();
+      });
+
+      return sortedEntities.map((entity: TaskEntity) =>
         TaskDTO.convertFromEntity(entity)
       );
     } catch (error) {

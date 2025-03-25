@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
 import { getTaskService } from '@/lib/services';
+import { TaskStatus } from '@/lib/services/tasks.service';
 import { authenticateRequest } from '@/lib/verify-auth-token';
 
 export const GET = async (req: NextRequest) => {
@@ -9,8 +10,30 @@ export const GET = async (req: NextRequest) => {
     if (!isValid) {
       return NextResponse.json({ error }, { status: 401 });
     }
+
+    // Get query parameters
+    const status = req.nextUrl.searchParams.get('status') as
+      | (typeof TaskStatus)[keyof typeof TaskStatus]
+      | null;
+    const orderParam = req.nextUrl.searchParams.get('order');
+    const order = orderParam ? (orderParam as 'asc' | 'desc') : undefined;
+    const limitParam = req.nextUrl.searchParams.get('limit');
+    const limit = limitParam ? Number.parseInt(limitParam, 10) : undefined;
+
     const taskService = await getTaskService();
-    const tasks = await taskService.getAllTasks();
+
+    // If no query parameters are provided, get all tasks
+    if (!status && !order && !limit) {
+      const tasks = await taskService.getAllTasks();
+      return NextResponse.json(tasks, { status: 200 });
+    }
+
+    // Otherwise, use findTasks with the provided parameters
+    const tasks = await taskService.findTasks({
+      ...(status && { filter: { status } }),
+      order,
+      limit,
+    });
 
     return NextResponse.json(tasks, { status: 200 });
   } catch (error) {

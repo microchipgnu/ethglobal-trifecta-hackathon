@@ -29,7 +29,9 @@ export const executePrompt = async (
     state: 'received_prompt',
     model: 'gpt-4o',
     provider: 'openai',
-    message: `Received prompt: ${prompt.length > 100 ? prompt.substring(0, 100) + '...' : prompt}`,
+    message: `Received prompt: ${
+      prompt.length > 100 ? `${prompt.substring(0, 100)}...` : prompt
+    }`,
     timestamp: new Date().toISOString(),
   });
 
@@ -85,8 +87,18 @@ export const executePrompt = async (
   // Use multi-group selection if we have multiple groups, otherwise use single group
   const toolsToUse =
     uniqueGroups.length > 1
-      ? await selectToolsFromMultipleGroups(prompt, uniqueGroups, 5)
-      : await selectTools(prompt, uniqueGroups[0], 5);
+      ? await selectToolsFromMultipleGroups({
+          prompt,
+          groups: uniqueGroups,
+          maxTools: 5,
+          options: { host, port },
+        })
+      : await selectTools({
+          prompt,
+          group: uniqueGroups[0],
+          maxTools: 5,
+          options: { host, port },
+        });
 
   const toolCount = Object.keys(toolsToUse).length;
   const tools = Object.keys(toolsToUse).map((tool) => ({
@@ -159,7 +171,7 @@ Please follow this plan to complete the task efficiently.
 `;
 
   const result = await generateText({
-    model: openai('o3-mini'),
+    model: openai('gpt-4o'),
     system:
       "You are an AI assistant that follows plans methodically. Work through the steps in the plan to complete the user's task.",
     prompt: enhancedPrompt,

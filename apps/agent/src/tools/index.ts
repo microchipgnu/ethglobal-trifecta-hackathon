@@ -8,7 +8,10 @@ import type { ToolSet } from 'ai';
 import { generateObject } from 'ai';
 import { z } from 'zod';
 
-export const getToolsGroup = async (group: string): Promise<ToolSet> => {
+export const getToolsGroup = async (
+  group: string,
+  options?: { host?: string; port?: number }
+): Promise<ToolSet> => {
   switch (group) {
     case 'crypto': {
       const goatTools = await getGoatTools();
@@ -30,8 +33,8 @@ export const getToolsGroup = async (group: string): Promise<ToolSet> => {
     }
     case 'computer':
       return (await getComputerTools({
-        host: 'computer',
-        port: 5900,
+        host: options?.host || 'computer',
+        port: options?.port || 5900,
       })) as ToolSet;
     case 'general':
       return (await getToolhouseTools()) as ToolSet;
@@ -40,16 +43,22 @@ export const getToolsGroup = async (group: string): Promise<ToolSet> => {
   }
 };
 
-export const selectTools = async (
-  prompt: string,
-  group: string | undefined,
-  maxTools = 5
-): Promise<ToolSet> => {
+export const selectTools = async ({
+  prompt,
+  group,
+  options,
+  maxTools = 5,
+}: {
+  prompt: string;
+  group: string | undefined;
+  options: { host?: string; port?: number };
+  maxTools?: number;
+}): Promise<ToolSet> => {
   // Default to 'general' if no group is specified
   const safeGroup = group || 'general';
 
   // Get all tools for the group
-  const allTools = await getToolsGroup(safeGroup);
+  const allTools = await getToolsGroup(safeGroup, options);
 
   // If we have fewer tools than maxTools, return all tools
   if (Object.keys(allTools).length <= maxTools) {
@@ -91,11 +100,17 @@ export const selectTools = async (
   return selectedToolSet;
 };
 
-export const selectToolsFromMultipleGroups = async (
-  prompt: string,
-  groups: (string | undefined)[],
-  maxTools = 5
-): Promise<ToolSet> => {
+export const selectToolsFromMultipleGroups = async ({
+  prompt,
+  groups,
+  maxTools = 5,
+  options,
+}: {
+  prompt: string;
+  groups: (string | undefined)[];
+  maxTools?: number;
+  options?: { host?: string; port?: number };
+}): Promise<ToolSet> => {
   // Filter out undefined values and provide defaults
   const safeGroups = groups.filter((g) => g !== undefined) as string[];
 
@@ -110,7 +125,7 @@ export const selectToolsFromMultipleGroups = async (
 
   // Collect tools from all groups
   for (const group of safeGroups) {
-    const groupTools = await getToolsGroup(group);
+    const groupTools = await getToolsGroup(group, options);
     const groupToolNames = Object.keys(groupTools);
     groupsToTools[group] = groupToolNames;
 

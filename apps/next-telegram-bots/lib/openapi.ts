@@ -11,6 +11,7 @@ import {
   createTaskDTOSchema,
   taskDTOSchema,
   taskEntitySchema,
+  TaskStatus,
 } from '@/lib/services/tasks.service';
 import {
   createUserDTOSchema,
@@ -525,6 +526,34 @@ export const openApiSpec = createDocument({
       get: {
         operationId: 'getAllTasks',
         security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: 'status',
+            in: 'query',
+            schema: {
+              type: 'string',
+              enum: Object.values(TaskStatus),
+            },
+            description: 'Filter tasks by status',
+          },
+          {
+            name: 'order',
+            in: 'query',
+            schema: {
+              type: 'string',
+              enum: ['asc', 'desc'],
+            },
+            description: 'Sort order for results',
+          },
+          {
+            name: 'limit',
+            in: 'query',
+            schema: {
+              type: 'integer',
+            },
+            description: 'Maximum number of tasks to return',
+          },
+        ],
         responses: {
           200: {
             description: 'Tasks fetched successfully',

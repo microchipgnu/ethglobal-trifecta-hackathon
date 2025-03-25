@@ -7,18 +7,17 @@
 import { executePrompt } from '.';
 
 export const loop = async () => {
-  const prompts = [
-    'Use computer to go to Dexscreener and find interesting tokens',
-    'Use computer to go to pump.fun and find interesting tokens',
-  ];
+  // fetch current task from db
+  const prompt =
+    'On the computer, go to dexscreener and look at the top Base coins';
 
-  for (const prompt of prompts) {
-    const response = await executePrompt(prompt, {
-      host: 'computer',
-      port: 5900,
-    });
-    console.log(response);
-  }
+  // update task to in progress
+
+  const response = await executePrompt(prompt, {
+    host: 'computer',
+    port: 5900,
+  });
+  console.log(response);
 };
 
 loop();
