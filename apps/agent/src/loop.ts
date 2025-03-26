@@ -1,9 +1,3 @@
-// Listen to the queue for new messages
-// Get the last message from the queue
-// Execute the message
-// Update the state
-// Send the response
-
 import { executePrompt } from '.';
 import TasksClient, { TaskStatus } from './tasks-api-client';
 
@@ -44,11 +38,13 @@ export const processTask = async () => {
         const elapsedTime = currentTime - startTime;
 
         if (elapsedTime > TASK_TIMEOUT_MS) {
-          console.log(`Task ${task.id} has exceeded timeout (${TASK_TIMEOUT_MS / 1000} seconds). Marking as failed.`);
+          console.log(
+            `Task ${task.id} has exceeded timeout (${TASK_TIMEOUT_MS / 1000} seconds). Marking as failed.`
+          );
           await tasksClient.updateTaskStatus(
             task.id,
             TaskStatus.FAILED,
-            "Task timed out after 3 minutes"
+            'Task timed out after 3 minutes'
           );
           return true;
         }
@@ -102,9 +98,13 @@ export const processTask = async () => {
     console.log('Task updated to IN_PROGRESS');
 
     // Create a timeout promise that will reject after TASK_TIMEOUT_MS
-    const timeoutPromise = new Promise((_, reject) => {
+    const timeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(() => {
-        reject(new Error(`Task execution timed out after ${TASK_TIMEOUT_MS / 1000} seconds`));
+        reject(
+          new Error(
+            `Task execution timed out after ${TASK_TIMEOUT_MS / 1000} seconds`
+          )
+        );
       }, TASK_TIMEOUT_MS);
     });
 
@@ -115,7 +115,7 @@ export const processTask = async () => {
           host: 'computer',
           port: 5900,
         }),
-        timeoutPromise
+        timeoutPromise,
       ]);
 
       // Update task with results
@@ -129,16 +129,19 @@ export const processTask = async () => {
 
       console.log(`Task ${task.id} completed successfully`);
       return true;
-    } catch (error) {
-      console.error(`Task execution failed or timed out: ${error.message}`);
-      
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error occurred';
+
+      console.error(`Task execution failed or timed out: ${errorMessage}`);
+
       // Update task as failed
       await tasksClient.updateTaskStatus(
         task.id,
         TaskStatus.FAILED,
-        `Task execution failed: ${error.message}`
+        `Task execution failed: ${errorMessage}`
       );
-      
+
       console.log(`Task ${task.id} marked as FAILED due to timeout or error`);
       return true;
     }
