@@ -19,7 +19,41 @@ const BACKOFF_FACTOR = 1.5; // Exponential factor
 
 export const processTask = async () => {
   try {
-    // Fetch pending tasks
+    // First check for any IN_PROGRESS tasks
+    const inProgressTasks = await tasksClient.getAllTasks({
+      status: TaskStatus.IN_PROGRESS,
+      limit: 1,
+    });
+
+    // If there's an in-progress task, continue with it
+    if (inProgressTasks.length > 0) {
+      const task = inProgressTasks[0];
+      if (!task) {
+        console.log('No task found in in-progress tasks');
+        return false;
+      }
+      console.log(`Continuing in-progress task: ${task.id} ${task.prompt}`);
+
+      // Execute the task
+      const response = await executePrompt(task.prompt, {
+        host: 'computer',
+        port: 5900,
+      });
+
+      // Update task with results
+      await tasksClient.updateTaskStatus(
+        task.id,
+        TaskStatus.COMPLETED,
+        typeof response.text === 'string'
+          ? response.text
+          : JSON.stringify(response)
+      );
+
+      console.log(`Task ${task.id} completed successfully`);
+      return true;
+    }
+
+    // If no in-progress tasks, fetch pending tasks
     const pendingTasks = await tasksClient.getAllTasks({
       status: TaskStatus.PENDING,
       limit: 1,
