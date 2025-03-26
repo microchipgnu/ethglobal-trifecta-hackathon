@@ -27,13 +27,15 @@ export function useAgentData() {
   useEffect(() => {
     fetchData();
 
-    // Set up interval to refetch data every 30 seconds
+    // Set up interval to refetch data every 5 seconds
     const intervalId = setInterval(() => {
       fetchData();
-    }, 30000);
+    }, 10000);
 
     // Clean up interval on component unmount
-    return () => clearInterval(intervalId);
+    return () => {
+      clearInterval(intervalId);
+    };
   }, []);
 
   const refetch = () => {

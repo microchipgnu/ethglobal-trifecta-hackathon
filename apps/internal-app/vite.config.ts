@@ -46,5 +46,6 @@ export default defineConfig({
     ),
     'import.meta.env.VITE_NODE_ENV': JSON.stringify(process.env.NODE_ENV),
     'import.meta.env.VITE_TG_BEARER_TOKEN': JSON.stringify(process.env.NEXT_TG_BEARER_TOKEN),
+    'import.meta.env.VITE_ALCHEMY_API_KEY': JSON.stringify(process.env.ALCHEMY_API_KEY),
   },
 });
