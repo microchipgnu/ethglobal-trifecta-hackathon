@@ -47,6 +47,9 @@ RUN chmod +x /home/myuser/novnc_startup.sh
 # 7) Expose VNC and noVNC ports
 EXPOSE 5900 6080
 
+# 7.5) Add echo command to display container status
+RUN echo "Container setup complete. Ready to start services."
+
 # 8) Run Xvfb, x11vnc, Xfce, and noVNC
 CMD ["/bin/sh", "-c", "\
     Xvfb :99 -screen 0 1280x800x24 >/dev/null 2>&1 & \
