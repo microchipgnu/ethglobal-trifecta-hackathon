@@ -48,9 +48,7 @@ pacmd load-module module-virtual-source source_name=virtual_mic master=virtual_s
 # Add delay to ensure PulseAudio is fully initialized
 sleep 3
 # Set the default source and sink for better stability
-pacmd set-default-sink virtual_speaker
-pacmd set-default-source virtual_mic
-echo "Started PulseAudio with virtual devices"
+echo "Started PulseAudio"
 
 # -----------------------
 # 3) Construct the target URL
@@ -151,7 +149,7 @@ while [ $FFMPEG_RETRY_COUNT -lt $MAX_FFMPEG_RETRIES ] && [ "$FFMPEG_SUCCESS" = f
         echo "RTMP server is available, starting stream..."
         
         ffmpeg -f x11grab -framerate "$FPS" -s "$RESOLUTION" -i :99 \
-            -f pulse -i virtual_mic.monitor \
+            -f pulse -i default \
             -c:v libx264 -pix_fmt yuv420p -preset veryfast \
             -b:v "$VIDEO_BITRATE" -maxrate "$VIDEO_BITRATE" -bufsize "$VIDEO_BITRATE" \
             -c:a aac -b:a "$AUDIO_BITRATE" -ar 44100 \
