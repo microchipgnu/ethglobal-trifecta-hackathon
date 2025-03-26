@@ -1,10 +1,5 @@
 import { type ToolSet, tool } from 'ai';
-import {
-  type Address,
-  erc20Abi,
-  formatEther,
-  parseEther
-} from 'viem';
+import { type Address, erc20Abi, formatEther, parseEther } from 'viem';
 import { z } from 'zod';
 
 import { createToolsWithOverrides } from '@/lib/ai/tools/utils';
@@ -16,7 +11,7 @@ import { generateRandomReward } from '@/lib/utils/rewards';
 import {
   mainnetPublicClient,
   mainnetWalletClient,
-  testnetPublicClient
+  testnetPublicClient,
 } from '@/lib/clients';
 
 const MAXIMUM_COOLDOWN_MS = 2 * 24 * 60 * 60 * 1000; // 2 days
@@ -131,11 +126,11 @@ export const createTask = tool({
     prompt: z
       .string()
       .describe(
-        'The task prompt for the agent.  The agent will perform the task on livestream'
+        'Description of the task for the Midcurve.live agent to perform on livestream'
       ),
   }),
   description:
-    'Creates a task if user has at least 10k MCRV tokens and no pending tasks',
+    'Create a task for the Midcurve.live agent to perform on livestream',
   execute: async ({ userId, prompt }) => {
     try {
       // Get user details
@@ -176,15 +171,12 @@ export const createTask = tool({
           await taskService.findTasksByCreatorTelegramId(userId);
 
         const pendingTasks = userTasks.filter(
-          (task) =>
-            task.status === TaskStatus.PENDING ||
-            task.status === TaskStatus.IN_PROGRESS
+          (task) => task.status === TaskStatus.PENDING
         );
 
         if (pendingTasks.length > 0) {
           return {
-            error:
-              'You already have a pending task. Please wait for it to complete before creating a new one.',
+            error: 'User already has a task pending.',
           };
         }
 
@@ -197,7 +189,7 @@ export const createTask = tool({
         });
 
         return {
-          result: `Task ${newTask.id} created and submitted to the agent.`,
+          result: `Task ${newTask.id} submitted to the agent.`,
         };
       } catch (error) {
         console.error('Error checking MCRV balance:', error);

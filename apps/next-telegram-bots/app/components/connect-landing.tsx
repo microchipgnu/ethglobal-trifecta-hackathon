@@ -73,8 +73,7 @@ export const ConnectLanding = ({ id }: { id: string }) => {
           <div className="p-6 border-b border-gray-800">
             <h2 className="text-2xl font-bold">Connect</h2>
             <p className="text-gray-400 mt-1">
-              Link your Base Wallet to your Telegram account and deposit .001
-              $ETH to participate in the Midcurve.live community
+              Deposit .001 ETH for 10k $MCRV (testnet) to submit tasks
             </p>
           </div>
           <div className="p-6 space-y-4">
@@ -94,8 +93,8 @@ export const ConnectLanding = ({ id }: { id: string }) => {
             {id && authenticated && isWalletLinked === true && (
               <div className="text-center bg-green-900/30 text-green-400 p-4 rounded-lg border border-green-800">
                 <p>
-                  Connected wallet has already been successfully linked to your
-                  Telegram account
+                  Connected wallet has been successfully linked to your Telegram
+                  account
                 </p>
               </div>
             )}
@@ -107,8 +106,7 @@ export const ConnectLanding = ({ id }: { id: string }) => {
               <div className="flex flex-col gap-3">
                 <div className="text-center bg-green-900/30 text-green-400 p-4 rounded-lg border border-green-800">
                   <p>
-                    Connected wallet has already made a successful deposit of
-                    min. .001 $ETH, feel free to deposit more!
+                    Connected wallet has made a successful deposit of .001 ETH!
                   </p>
                 </div>
 
@@ -119,11 +117,11 @@ export const ConnectLanding = ({ id }: { id: string }) => {
                   rel="noopener noreferrer"
                 >
                   <PulsatingButton className="text-black font-bold w-full md:w-1/3 hover:animate-pulse">
-                    Join the Midcurve Chat
+                    Submit a task
                   </PulsatingButton>
                 </a>
               </div>
-            ) : isConnected ? (
+            ) : isConnected && ready && authenticated ? (
               <Deposit />
             ) : null}
           </div>

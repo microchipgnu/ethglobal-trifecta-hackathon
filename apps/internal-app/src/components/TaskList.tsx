@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface Task {
   _id: string;
@@ -15,6 +15,8 @@ interface Task {
 const TaskList: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [currentTask, setCurrentTask] = useState<Task | null>(null);
+  const [pendingTasks, setPendingTasks] = useState<Task[]>([]);
+  const [completedTasks, setCompletedTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
@@ -25,21 +27,44 @@ const TaskList: React.FC = () => {
       try {
         const response = await fetch('https://bots.midcurve.live/api/tasks', {
           headers: {
-            'Authorization': `Bearer ${import.meta.env.VITE_TG_BEARER_TOKEN}` as string
-          }
+            Authorization:
+              `Bearer ${import.meta.env.VITE_TG_BEARER_TOKEN}` as string,
+          },
         });
-        
+
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
-        
+
         const data = await response.json();
         setTasks(data);
-        
-        // Set current task (first pending task or first task)
-        const pendingTask = data.find((task: Task) => task.status === 'pending');
-        setCurrentTask(pendingTask || (data.length > 0 ? data[0] : null));
-        
+
+        // Sort tasks by createdAt in descending order (newest first)
+        const sortedTasks = [...data].sort(
+          (a: Task, b: Task) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+
+        // Find in progress task
+        const inProgressTask = sortedTasks.find(
+          (task: Task) => task.status === 'in_progress'
+        );
+
+        // Set current task if there's an in-progress task
+        setCurrentTask(inProgressTask || null);
+
+        // Filter pending tasks
+        const filteredPendingTasks = sortedTasks.filter(
+          (task: Task) => task.status === 'pending'
+        );
+        setPendingTasks(filteredPendingTasks);
+
+        // Filter completed tasks and limit to 2
+        const filteredCompletedTasks = sortedTasks
+          .filter((task: Task) => task.status === 'completed')
+          .slice(0, 2);
+        setCompletedTasks(filteredCompletedTasks);
+
         setError(null);
       } catch (err) {
         console.error('Error fetching tasks:', err);
@@ -52,7 +77,7 @@ const TaskList: React.FC = () => {
 
     // Initial fetch
     fetchTasks();
-    
+
     // Set up interval to fetch tasks every 10 seconds
     const intervalId = setInterval(fetchTasks, 10000);
 
@@ -80,8 +105,11 @@ const TaskList: React.FC = () => {
   // Format date to a more readable format
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString() + ', ' + 
-           date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    return `${date.toLocaleDateString()}, ${date.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    })}`;
   };
 
   return (
@@ -109,36 +137,38 @@ const TaskList: React.FC = () => {
           </div>
         </div>
 
-        {/* Current Task Section - Minimalistic */}
-        {currentTask && (
-          <div
-            className="p-2 bg-gray-800 bg-opacity-60 rounded-sm mb-2"
-            style={{
-              borderLeft: `2px solid ${getStatusColor(currentTask.status)}`,
-            }}
-          >
-            <div className="flex items-center mb-1">
+        {/* Current Task Section */}
+        <div
+          className="p-2 bg-gray-800 bg-opacity-60 rounded-sm mb-2"
+          style={{
+            borderLeft: `2px solid ${currentTask ? getStatusColor(currentTask.status) : 'var(--neon-yellow)'}`,
+          }}
+        >
+          <div className="flex items-center mb-1">
+            <div
+              className="w-2 h-2 rounded-full mr-2 animate-pulse"
+              style={{
+                backgroundColor: currentTask
+                  ? getStatusColor(currentTask.status)
+                  : 'var(--neon-yellow)',
+                boxShadow: `0 0 5px ${currentTask ? getStatusColor(currentTask.status) : 'var(--neon-yellow)'}`,
+              }}
+            />
+            <span
+              className="font-bold text-xs tracking-wide"
+              style={{ color: 'white' }}
+            >
+              CURRENT TASK
+            </span>
+            {isLoading && (
               <div
-                className="w-2 h-2 rounded-full mr-2 animate-pulse"
-                style={{
-                  backgroundColor: getStatusColor(currentTask.status),
-                  boxShadow: `0 0 5px ${getStatusColor(currentTask.status)}`,
-                }}
+                className="ml-2 w-1 h-1 rounded-full animate-pulse"
+                style={{ backgroundColor: 'var(--neon-cyan)' }}
               />
-              <span
-                className="font-bold text-xs tracking-wide"
-                style={{ color: 'white' }}
-              >
-                CURRENT TASK
-              </span>
-              {isLoading && (
-                <div
-                  className="ml-2 w-1 h-1 rounded-full animate-pulse"
-                  style={{ backgroundColor: 'var(--neon-cyan)' }}
-                />
-              )}
-            </div>
+            )}
+          </div>
 
+          {currentTask ? (
             <div className="flex flex-col space-y-1">
               <div className="flex items-center text-xs">
                 <span style={{ color: 'rgba(255,255,255,0.5)', width: '60px' }}>
@@ -148,7 +178,7 @@ const TaskList: React.FC = () => {
                   @{currentTask.creatorTelegramUsername}
                 </span>
               </div>
-              
+
               <div className="flex items-start text-xs">
                 <span style={{ color: 'rgba(255,255,255,0.5)', width: '60px' }}>
                   PROMPT
@@ -157,26 +187,32 @@ const TaskList: React.FC = () => {
                   {currentTask.prompt}
                 </span>
               </div>
-              
+
               <div className="flex justify-between text-xs">
                 <div className="flex items-center">
-                  <span style={{ color: 'rgba(255,255,255,0.5)', width: '60px' }}>
+                  <span
+                    style={{ color: 'rgba(255,255,255,0.5)', width: '60px' }}
+                  >
                     STATUS
                   </span>
                   <span style={{ color: getStatusColor(currentTask.status) }}>
                     {currentTask.status.toUpperCase()}
                   </span>
                 </div>
-                
+
                 <span style={{ color: 'var(--neon-green)' }}>
                   {formatDate(currentTask.createdAt).split(',')[1].trim()}
                 </span>
               </div>
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="flex items-center text-xs">
+              <span style={{ color: 'var(--neon-yellow)' }}>NONE</span>
+            </div>
+          )}
+        </div>
 
-        {/* Upcoming Tasks - Simplified */}
+        {/* Upcoming Tasks - Pending Only */}
         <div className="mt-1">
           <div className="flex justify-between items-center mb-1">
             <span
@@ -186,11 +222,11 @@ const TaskList: React.FC = () => {
               UPCOMING TASKS
             </span>
             <span className="text-xs" style={{ color: 'var(--neon-cyan)' }}>
-              {tasks.filter(task => !currentTask || task._id !== currentTask._id).length} FOUND
+              {pendingTasks.length} PENDING
             </span>
           </div>
 
-          {tasks.length > 0 ? (
+          {pendingTasks.length > 0 ? (
             <div
               className="bg-gray-800 bg-opacity-60 rounded-sm p-1 overflow-auto"
               style={{
@@ -198,33 +234,31 @@ const TaskList: React.FC = () => {
                 borderLeft: '1px solid var(--neon-purple)',
               }}
             >
-              {tasks
-                .filter(task => !currentTask || task._id !== currentTask._id)
-                .map(task => (
-                  <div
-                    key={task._id}
-                    className="p-1 mb-1 rounded-sm text-xs"
-                    style={{
-                      background: 'rgba(15, 15, 18, 0.8)',
-                      borderLeft: `2px solid ${getStatusColor(task.status)}`,
-                    }}
-                  >
-                    <div className="flex justify-between items-center">
-                      <span style={{ color: 'var(--neon-cyan)' }}>
-                        @{task.creatorTelegramUsername}
-                      </span>
-                      <span
-                        className="text-xs px-1 rounded"
-                        style={{ color: getStatusColor(task.status) }}
-                      >
-                        {task.status.toUpperCase()}
-                      </span>
-                    </div>
-                    <div style={{ color: 'var(--neon-yellow)' }}>
-                      {task.prompt}
-                    </div>
+              {pendingTasks.map((task) => (
+                <div
+                  key={task._id}
+                  className="p-1 mb-1 rounded-sm text-xs"
+                  style={{
+                    background: 'rgba(15, 15, 18, 0.8)',
+                    borderLeft: `2px solid ${getStatusColor(task.status)}`,
+                  }}
+                >
+                  <div className="flex justify-between items-center">
+                    <span style={{ color: 'var(--neon-cyan)' }}>
+                      @{task.creatorTelegramUsername}
+                    </span>
+                    <span
+                      className="text-xs px-1 rounded"
+                      style={{ color: getStatusColor(task.status) }}
+                    >
+                      {task.status.toUpperCase()}
+                    </span>
                   </div>
-                ))}
+                  <div style={{ color: 'var(--neon-yellow)' }}>
+                    {task.prompt}
+                  </div>
+                </div>
+              ))}
             </div>
           ) : error ? (
             <div
@@ -237,8 +271,70 @@ const TaskList: React.FC = () => {
             <div
               className="p-1 text-center text-xs"
               style={{ color: 'var(--neon-yellow)' }}
+            />
+          )}
+        </div>
+
+        {/* Completed Tasks Section */}
+        <div className="mt-2">
+          <div className="flex justify-between items-center mb-1">
+            <span
+              className="text-xs uppercase tracking-wider"
+              style={{ color: 'var(--neon-purple)' }}
             >
-              NO TASKS FOUND
+              COMPLETED TASKS
+            </span>
+            <span className="text-xs" style={{ color: 'var(--neon-green)' }}>
+              {completedTasks.length} RECENT
+            </span>
+          </div>
+
+          {completedTasks.length > 0 ? (
+            <div
+              className="bg-gray-800 bg-opacity-60 rounded-sm p-1 overflow-auto"
+              style={{
+                maxHeight: '120px',
+                borderLeft: '1px solid var(--neon-purple)',
+              }}
+            >
+              {completedTasks.map((task) => (
+                <div
+                  key={task._id}
+                  className="p-1 mb-1 rounded-sm text-xs"
+                  style={{
+                    background: 'rgba(15, 15, 18, 0.8)',
+                    borderLeft: `2px solid ${getStatusColor(task.status)}`,
+                  }}
+                >
+                  <div className="flex justify-between items-center">
+                    <span style={{ color: 'var(--neon-cyan)' }}>
+                      @{task.creatorTelegramUsername}
+                    </span>
+                    <span
+                      className="text-xs px-1 rounded"
+                      style={{ color: getStatusColor(task.status) }}
+                    >
+                      {task.status.toUpperCase()}
+                    </span>
+                  </div>
+                  <div style={{ color: 'var(--neon-yellow)' }}>
+                    {task.prompt}
+                  </div>
+                  <div
+                    className="text-right text-xs"
+                    style={{ color: 'var(--neon-green)' }}
+                  >
+                    {formatDate(task.createdAt).split(',')[1].trim()}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div
+              className="p-1 text-center text-xs"
+              style={{ color: 'var(--neon-yellow)' }}
+            >
+              NO COMPLETED TASKS
             </div>
           )}
         </div>

@@ -1,9 +1,9 @@
 'use server';
 
-import { AGENT_WALLET_ADDRESS } from '@/lib/constants';
+import { testnetWalletClient } from '@/lib/clients';
+import { AGENT_WALLET_ADDRESS, getRpcUrl } from '@/lib/constants';
 import { getUserService } from '@/lib/services';
 import { decryptUserId } from '@/lib/telegram/utils';
-import { z } from 'zod';
 import {
   createPublicClient,
   erc20Abi,
@@ -11,9 +11,8 @@ import {
   http,
   parseEther,
 } from 'viem';
-import { base, baseSepolia } from 'viem/chains';
-import { getRpcUrl } from '@/lib/constants';
-import { testnetWalletClient } from '@/lib/clients';
+import { base } from 'viem/chains';
+import { z } from 'zod';
 
 // Create a public client for Base mainnet
 const publicClient = createPublicClient({

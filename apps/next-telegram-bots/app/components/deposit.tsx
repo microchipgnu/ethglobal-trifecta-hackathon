@@ -275,7 +275,7 @@ export const Deposit = () => {
                 rel="noopener noreferrer"
               >
                 <PulsatingButton className="text-black font-bold w-full md:w-1/3 hover:animate-pulse">
-                  Join the Midcurve Chat!
+                  Submit a task
                 </PulsatingButton>
               </a>
             )}
@@ -288,7 +288,7 @@ export const Deposit = () => {
           <button
             type="button"
             onClick={handleDeposit}
-            className="px-6 py-3 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-black font-bold transition-colors"
+            className="px-6 py-3 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-black font-bold transition-colors cursor-pointer"
           >
             Deposit
           </button>

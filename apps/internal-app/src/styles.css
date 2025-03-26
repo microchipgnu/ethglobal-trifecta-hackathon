@@ -209,3 +209,19 @@ body::before {
     transparent 5px
   );
 }
+
+/* Hide scrollbars but keep functionality */
+/* For Webkit browsers (Chrome, Safari, etc) */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* For Firefox */
+* {
+  scrollbar-width: none;
+}
+
+/* For IE and Edge */
+* {
+  -ms-overflow-style: none;
+}
