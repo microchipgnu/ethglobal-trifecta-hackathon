@@ -1,10 +1,10 @@
-import { tool } from 'ai';
-import walletClient from '../wallet';
-import { z } from 'zod';
-import { type Address, createPublicClient, erc20Abi, http } from 'viem';
-import { base } from 'viem/chains';
+import { CurrencyAmount, Percent, Token, TradeType } from '@uniswap/sdk-core';
 import { FeeAmount, Pool, Route, SwapRouter, Trade } from '@uniswap/v3-sdk';
-import { Token, CurrencyAmount, TradeType, Percent } from '@uniswap/sdk-core';
+import { tool } from 'ai';
+import { http, type Address, createPublicClient, erc20Abi } from 'viem';
+import { base } from 'viem/chains';
+import { z } from 'zod';
+import { mainnetWalletClient } from '../wallet';
 import { POOL_ABI } from './constants';
 
 // Uniswap V3 router address
@@ -12,7 +12,7 @@ const SWAP_ROUTER_ADDRESS =
   '0xE592427A0AEce92De3Edee1F18E0157C05861564' as const;
 
 // Public client for reading from the blockchain
-const publicClient = createPublicClient({
+const mainnetPublicClient = createPublicClient({
   chain: base,
   transport: http(
     `https://base-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`
@@ -24,14 +24,14 @@ const publicClient = createPublicClient({
  */
 async function fetchPoolData(poolAddress: Address) {
   // Fetch slot0 data (current price, tick, etc.)
-  const slot0 = (await publicClient.readContract({
+  const slot0 = (await mainnetPublicClient.readContract({
     address: poolAddress,
     abi: POOL_ABI,
     functionName: 'slot0',
   })) as [bigint, number, number, number, number, number, boolean];
 
   // Fetch liquidity
-  const liquidity = await publicClient.readContract({
+  const liquidity = await mainnetPublicClient.readContract({
     address: poolAddress,
     abi: POOL_ABI,
     functionName: 'liquidity',
@@ -71,17 +71,17 @@ export const swapTokensUniswapV3 = tool({
     slippageTolerance = 3,
   }) => {
     try {
-      const chainId = await publicClient.getChainId();
+      const chainId = await mainnetPublicClient.getChainId();
 
       const [fromTokenDecimals, toTokenDecimals] = await Promise.all([
         // get token info from the token address
-        publicClient.readContract({
+        mainnetPublicClient.readContract({
           address: fromToken as `0x${string}`,
           abi: erc20Abi,
           functionName: 'decimals',
         }),
 
-        publicClient.readContract({
+        mainnetPublicClient.readContract({
           address: toToken as `0x${string}`,
           abi: erc20Abi,
           functionName: 'decimals',
@@ -127,7 +127,7 @@ export const swapTokensUniswapV3 = tool({
       const options = {
         slippageTolerance: new Percent(Math.floor(slippageTolerance), 100), // Convert to bips
         deadline: Math.floor(Date.now() / 1000) + 60 * 20, // 20 minutes from the current Unix time
-        recipient: walletClient.account.address,
+        recipient: mainnetWalletClient.account.address,
       };
 
       // Generate swap parameters
@@ -137,23 +137,25 @@ export const swapTokensUniswapV3 = tool({
       );
 
       // Execute approve transaction
-      const approveHash = await walletClient.writeContract({
+      const approveHash = await mainnetWalletClient.writeContract({
         address: fromToken as `0x${string}`,
         abi: erc20Abi,
         functionName: 'approve',
         args: [SWAP_ROUTER_ADDRESS, amountInWei],
       });
 
-      await publicClient.waitForTransactionReceipt({ hash: approveHash });
+      await mainnetPublicClient.waitForTransactionReceipt({
+        hash: approveHash,
+      });
 
       // Execute swap transaction using sendTransaction
-      const swapHash = await walletClient.sendTransaction({
+      const swapHash = await mainnetWalletClient.sendTransaction({
         to: SWAP_ROUTER_ADDRESS,
         value: BigInt(methodParameters.value || '0'),
         data: methodParameters.calldata as `0x${string}`,
       });
 
-      await publicClient.waitForTransactionReceipt({ hash: swapHash });
+      await mainnetPublicClient.waitForTransactionReceipt({ hash: swapHash });
 
       return {
         success: true,

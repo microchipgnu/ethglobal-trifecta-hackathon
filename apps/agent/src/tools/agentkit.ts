@@ -4,13 +4,13 @@ import {
   erc20ActionProvider,
   erc721ActionProvider,
   walletActionProvider,
-  wethActionProvider
+  wethActionProvider,
 } from '@coinbase/agentkit';
 import { getVercelAITools } from '@coinbase/agentkit-vercel-ai-sdk';
-import walletClient from '../wallet';
+import { mainnetWalletClient } from '../wallet';
 
 export const getTools = async () => {
-  const walletProvider = new ViemWalletProvider(walletClient);
+  const walletProvider = new ViemWalletProvider(mainnetWalletClient);
 
   const agentKit = await AgentKit.from({
     walletProvider,
