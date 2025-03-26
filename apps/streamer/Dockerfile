@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends --fix-missing x
 
 # Install media packages - retry if needed
 RUN for i in $(seq 1 3); do \
-        apt-get update && apt-get install -y --no-install-recommends --fix-missing ffmpeg pulseaudio pulseaudio-utils && \
+        apt-get update && apt-get install -y --no-install-recommends --fix-missing ffmpeg pulseaudio pulseaudio-utils alsa-utils && \
         rm -rf /var/lib/apt/lists/* && break || \
         if [ $i -lt 3 ]; then sleep 5; fi; \
     done
@@ -23,42 +23,42 @@ RUN apt-get update && apt-get install -y --no-install-recommends --fix-missing c
 ENV DISPLAY=:98
 ENV CHROME_PATH=/usr/bin/chromium
 ENV CHROME_FLAGS="--no-sandbox --disable-gpu --autoplay-policy=no-user-gesture-required"
+ENV PULSE_SERVER=unix:/var/run/pulse/native
 
-# Configure PulseAudio for system mode
+# Configure PulseAudio for system mode - simpler approach
 RUN mkdir -p /etc/pulse
-COPY <<EOF /etc/pulse/system.pa
+RUN cat > /etc/pulse/client.conf << EOF
+default-server = unix:/var/run/pulse/native
+autospawn = no
+daemon-binary = /bin/true
+EOF
+
+RUN cat > /etc/pulse/daemon.conf << EOF
+exit-idle-time = -1
+realtime-scheduling = yes
+realtime-priority = 5
+lock-memory = yes
+high-priority = yes
+nice-level = -11
+EOF
+
+RUN cat > /etc/pulse/system.pa << EOF
 #!/usr/bin/pulseaudio -nF
 load-module module-device-restore
 load-module module-stream-restore
 load-module module-card-restore
-load-module module-always-sink
-load-module module-always-source
-load-module module-native-protocol-unix auth-anonymous=1
-load-module module-default-device-restore
-load-module module-rescue-streams
-load-module module-intended-roles
-load-module module-suspend-on-idle
-load-module module-position-event-sounds
-load-module module-role-cork
-load-module module-filter-heuristics
-load-module module-filter-apply
+load-module module-udev-detect
+load-module module-native-protocol-unix auth-anonymous=1 socket=/var/run/pulse/native
 load-module module-null-sink sink_name=virtual_speaker sink_properties=device.description=virtual_speaker
 load-module module-virtual-source source_name=virtual_mic master=virtual_speaker.monitor source_properties=device.description=virtual_mic
 set-default-source virtual_mic
 set-default-sink virtual_speaker
 EOF
 
-RUN echo "default-server = unix:/tmp/pulse-socket" > /etc/pulse/client.conf && \
-    echo "autospawn = no" >> /etc/pulse/client.conf && \
-    echo "daemon-binary = /bin/true" >> /etc/pulse/client.conf && \
-    chmod 644 /etc/pulse/client.conf /etc/pulse/system.pa
-
-# Ensure X11 directory exists
-RUN mkdir -p /tmp/.X11-unix && \
-    chmod 1777 /tmp/.X11-unix
-
-# Create XDG_RUNTIME_DIR directory
-RUN mkdir -p /tmp/runtime-root && \
+# Create necessary directories with proper permissions
+RUN mkdir -p /var/run/pulse /tmp/.X11-unix /tmp/runtime-root && \
+    chmod 777 /var/run/pulse && \
+    chmod 1777 /tmp/.X11-unix && \
     chmod 700 /tmp/runtime-root
 
 # Create a working directory
