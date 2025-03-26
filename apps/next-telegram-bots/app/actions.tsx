@@ -4,6 +4,22 @@ import { AGENT_WALLET_ADDRESS } from '@/lib/constants';
 import { getUserService } from '@/lib/services';
 import { decryptUserId } from '@/lib/telegram/utils';
 import { z } from 'zod';
+import {
+  createPublicClient,
+  erc20Abi,
+  formatEther,
+  http,
+  parseEther,
+} from 'viem';
+import { base, baseSepolia } from 'viem/chains';
+import { getRpcUrl } from '@/lib/constants';
+import { testnetWalletClient } from '@/lib/clients';
+
+// Create a public client for Base mainnet
+const publicClient = createPublicClient({
+  chain: base,
+  transport: http(getRpcUrl(base.id)),
+});
 
 // Schema for user data validation with more robust parsing
 const userDataSchema = z.object({
@@ -108,7 +124,7 @@ export async function updateUserAction(formData: FormData) {
     console.log('existingUser', existingUser);
 
     if (existingUser.evmAddress) {
-      return { success: true, message: 'Address already linked' };
+      return { success: true, message: 'Account linked' };
     }
 
     // Update user with simplified query
@@ -145,8 +161,14 @@ export async function checkRegisteredUser(
 }
 
 export async function updateUserDeposit(
-  evmAddress: string
-): Promise<{ success: boolean; depositHash?: string; message?: string }> {
+  evmAddress: string,
+  transactionHash?: string
+): Promise<{
+  success: boolean;
+  depositHash?: string;
+  tokenTxHash?: string;
+  message?: string;
+}> {
   try {
     console.log('Fetching user from database...');
     const userService = await getUserService();
@@ -157,52 +179,59 @@ export async function updateUserDeposit(
       return { success: false, message: 'User not found' };
     }
 
-    console.log('Fetching transactions from Base API...');
-    const response = await fetch(
-      `https://api.basescan.org/api?module=account&action=txlist&address=${evmAddress}&startblock=0&endblock=latest&page=1&offset=2&sort=desc&apikey=${process.env.BASESCAN_API}`
-    );
-    const data = await response.json();
+    // If transaction hash is provided, verify it directly
+    if (transactionHash && !user.depositHash) {
+      console.log('Verifying provided transaction hash:', transactionHash);
 
-    if (data.status !== '1') {
-      console.log('Failed to fetch transactions from Base API');
-      return {
-        success: false,
-        message:
-          'Failed to fetch transactions from Base Network, check again later or contact support',
-      };
-    }
+      const receipt = await publicClient.waitForTransactionReceipt({
+        hash: transactionHash as `0x${string}`,
+      });
 
-    console.log('Searching for matching transaction...');
-    const transactions = data.result;
-    const matchingTx = transactions.find(
-      (tx: {
-        from: string;
-        to: string;
-        value: string;
-        txreceipt_status: string;
-        hash: string;
-      }) =>
+      if (!receipt || receipt.status !== 'success') {
+        return { success: false, message: 'Failed to verify transaction' };
+      }
+
+      const tx = await publicClient.getTransaction({
+        hash: transactionHash as `0x${string}`,
+      });
+
+      // Minimum deposit amount in ETH
+      const minDepositAmount = parseEther('0.001');
+      const depositAmount = tx.value;
+
+      if (
         tx.from.toLowerCase() === evmAddress.toLowerCase() &&
-        tx.to.toLowerCase() === AGENT_WALLET_ADDRESS.toLowerCase() &&
-        Number.parseFloat(tx.value) >= 5 &&
-        tx.txreceipt_status === '1'
-    );
+        tx.to?.toLowerCase() === AGENT_WALLET_ADDRESS.toLowerCase() &&
+        depositAmount >= minDepositAmount &&
+        receipt.status === 'success'
+      ) {
+        console.log('Transaction verified, updating user deposit...');
+        await userService.updateUser(
+          { evmAddress },
+          {
+            depositHash: transactionHash,
+            depositAmount: Number.parseFloat(formatEther(depositAmount)),
+          }
+        );
 
-    if (!matchingTx) {
-      console.log('No matching transaction found');
-      return {
-        success: false,
-        message: 'No deposit transaction has been found',
-      };
+        // send 10k $MCRV to the user on baseSepolia
+        const mcrvTxHash = await testnetWalletClient.writeContract({
+          address: process.env.TOKEN_ADDRESS as `0x${string}`,
+          abi: erc20Abi,
+          functionName: 'transfer',
+          args: [evmAddress as `0x${string}`, parseEther('10000')],
+        });
+
+        console.log('mcrvTxHash', mcrvTxHash);
+        return {
+          success: true,
+          depositHash: transactionHash,
+          tokenTxHash: mcrvTxHash,
+        };
+      }
     }
 
-    console.log('Updating user deposit in database...');
-    await userService.updateUser(
-      { evmAddress },
-      { depositHash: matchingTx.hash.toString() }
-    );
-
-    return { success: true, depositHash: matchingTx.hash.toString() };
+    return { success: true, depositHash: user.depositHash };
   } catch (error) {
     console.error('Failed to update user deposit:', error);
     return { success: false, message: 'Failed to update user deposit' };

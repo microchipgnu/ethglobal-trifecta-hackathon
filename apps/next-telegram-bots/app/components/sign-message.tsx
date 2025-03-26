@@ -135,17 +135,13 @@ export const RegisterTelegram = ({
       </div>
 
       <div className="p-4 border-t border-gray-800 flex justify-end gap-2">
-        {(status === 'success' || status === 'error') && (
+        {status === 'error' && (
           <button
             type="button"
             onClick={handleReset}
-            className={`px-6 py-3 rounded-lg transition-colors cursor-pointer ${
-              status === 'success'
-                ? 'border border-gray-700 bg-gray-800 hover:bg-gray-700 text-white'
-                : 'bg-yellow-500 hover:bg-yellow-600 text-black font-bold'
-            }`}
+            className="px-6 py-3 rounded-lg transition-colors cursor-pointer bg-yellow-500 hover:bg-yellow-600 text-black font-bold"
           >
-            {status === 'success' ? 'Done' : 'Try Again'}
+            Try Again
           </button>
         )}
       </div>

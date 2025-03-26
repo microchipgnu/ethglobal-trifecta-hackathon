@@ -45,6 +45,7 @@
     "telegraf-middleware-console-time": "^2.1.0",
     "vercel-url": "^0.2.6",
     "viem": "^2.23.14",
+    "wagmi": "^2.14.15",
     "zod": "^3.24.2",
     "zod-openapi": "^4.2.3"
   },

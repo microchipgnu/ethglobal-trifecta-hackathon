@@ -2,11 +2,13 @@
 
 import { checkRegisteredUser, updateUserDeposit } from '@/app/actions';
 import { AGENT_WALLET_ADDRESS } from '@/lib/constants';
-import { usePrivy, useSendTransaction } from '@privy-io/react-auth';
 import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { parseEther } from 'viem';
 import { PulsatingButton } from './ui/pulsating-button';
+import { useAccount, useSendTransaction, useSwitchChain } from 'wagmi';
+import { usePrivy } from '@privy-io/react-auth';
+import { base } from 'wagmi/chains';
 
 type Status =
   | 'idle'
@@ -20,20 +22,39 @@ type Status =
 export const Deposit = () => {
   const { authenticated, ready, user } = usePrivy();
   const [status, setStatus] = useState<Status>('idle');
+
   const [result, setResult] = useState<{
     success: boolean;
     message: string;
+    tokenTxHash?: string;
+    depositTxHash?: string;
   } | null>(null);
 
-  const { sendTransaction } = useSendTransaction();
-  const [transactionHash, setTransactionHash] = useState<string | null>(null);
-  const [isConfirming, setIsConfirming] = useState(false);
-  const [isConfirmed, setIsConfirmed] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+  const {
+    data: txHash,
+    isPending,
+    isSuccess,
+    error,
+    sendTransaction,
+  } = useSendTransaction();
+  const { chainId } = useAccount();
+  const { switchChain } = useSwitchChain();
+  const [isWrongChain, setIsWrongChain] = useState(false);
+
+  useEffect(() => {
+    console.log('chainId', chainId);
+    if (chainId !== base.id) {
+      setIsWrongChain(true);
+      switchChain({ chainId: base.id });
+    }
+    if (chainId === base.id) {
+      setIsWrongChain(false);
+    }
+  }, [chainId, switchChain]);
 
   // Handle transaction confirmation
   useEffect(() => {
-    if (isConfirmed && transactionHash) {
+    if (isSuccess && txHash) {
       (async () => {
         console.log(
           'Transaction confirmed, waiting for API to index the transaction...'
@@ -51,14 +72,16 @@ export const Deposit = () => {
           );
           const userWallet = user?.wallet?.address;
           const updateResult = userWallet
-            ? await updateUserDeposit(userWallet)
+            ? await updateUserDeposit(userWallet, txHash)
             : { success: false, message: 'No wallet connected' };
 
           if (updateResult.success) {
             console.log('Transaction found in API, updating user deposit...');
             setResult({
               success: true,
-              message: `Deposit successful! Transaction: https://basescan.org/tx/${updateResult.depositHash}`,
+              message: 'Deposit successful!',
+              tokenTxHash: updateResult.tokenTxHash,
+              depositTxHash: txHash,
             });
             setStatus('success');
             return;
@@ -89,7 +112,7 @@ export const Deposit = () => {
         setStatus('error');
       });
     }
-  }, [isConfirmed, transactionHash, user]);
+  }, [isSuccess, txHash, user]);
 
   // Handle transaction errors
   useEffect(() => {
@@ -106,7 +129,12 @@ export const Deposit = () => {
   const handleDeposit = async () => {
     const amount = '.001'; // Hardcoded value of .001 ether
 
+    if (isPending) return; // Don't allow multiple transactions
+
     setStatus('checking');
+    setResult(null);
+    setIsWrongChain(false);
+
     try {
       const userWallet = user?.wallet?.address;
       const isRegistered = userWallet
@@ -116,47 +144,22 @@ export const Deposit = () => {
         throw new Error('User is not verified. Please sign the message first.');
       }
 
-      // Step 2: Send transaction
+      // Send transaction
       console.log('Sending transaction...');
       setStatus('sending');
 
-      // Convert .001 ETH to wei (10^15 for .001 ETH)
+      // Convert .001 ETH to wei
       const amountInWei = parseEther(amount);
 
-      try {
-        const txHash = await sendTransaction({
-          to: AGENT_WALLET_ADDRESS,
-          value: amountInWei,
-        });
+      // Send the transaction
+      sendTransaction({
+        to: AGENT_WALLET_ADDRESS as `0x${string}`,
+        value: amountInWei,
+        chainId: base.id,
+      });
 
-        setTransactionHash(typeof txHash === 'string' ? txHash : null);
-        setIsConfirming(true);
-
-        // Simple confirmation logic
-        const checkTxConfirmation = async () => {
-          try {
-            // In a real app, you would check for tx confirmation status
-            // Here we're just waiting a bit and assuming it was confirmed
-            await new Promise((resolve) => setTimeout(resolve, 5000));
-            setIsConfirming(false);
-            setIsConfirmed(true);
-          } catch (err) {
-            setError(
-              err instanceof Error
-                ? err
-                : new Error('Transaction confirmation failed')
-            );
-            setIsConfirming(false);
-          }
-        };
-
-        checkTxConfirmation();
-      } catch (e) {
-        setError(
-          e instanceof Error ? e : new Error('Failed to send transaction')
-        );
-        setStatus('error');
-      }
+      // The transaction has been sent but not confirmed yet
+      // Transaction confirmation is handled in the useEffect hooks
     } catch (error) {
       console.error('Deposit process failed:', error);
       setResult({
@@ -171,10 +174,6 @@ export const Deposit = () => {
   const handleReset = () => {
     setStatus('idle');
     setResult(null);
-    setTransactionHash(null);
-    setIsConfirming(false);
-    setIsConfirmed(false);
-    setError(null);
   };
 
   return (
@@ -182,7 +181,7 @@ export const Deposit = () => {
       <div className="p-4 border-b border-gray-800">
         <h2 className="text-xl font-bold">2. Deposit .001 $ETH</h2>
         <p className="text-gray-400 text-sm">
-          Deposit to be eligible for rewards
+          Deposit to submit prompts and be eligible for rewards.
         </p>
       </div>
 
@@ -190,7 +189,8 @@ export const Deposit = () => {
         {(status === 'checking' ||
           status === 'sending' ||
           status === 'waiting' ||
-          status === 'verifying') && (
+          status === 'verifying' ||
+          isPending) && (
           <div className="flex flex-col items-center justify-center py-8 space-y-4">
             <Loader2 className="h-10 w-10 animate-spin text-yellow-400" />
             <p className="text-center font-medium text-gray-300">
@@ -199,7 +199,22 @@ export const Deposit = () => {
               {status === 'waiting' &&
                 'Waiting for transaction confirmation...'}
               {status === 'verifying' && 'Verifying deposit...'}
+              {isPending && status === 'idle' && 'Transaction in progress...'}
+              {isWrongChain && 'Switching to Base network...'}
             </p>
+            {txHash && (status === 'waiting' || status === 'verifying') && (
+              <p className="text-center text-sm text-gray-400">
+                Transaction:{' '}
+                <a
+                  href={`https://base.blockscout.com/tx/${txHash}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-yellow-400 underline"
+                >
+                  {`${txHash.substring(0, 10)}...${txHash.substring(txHash.length - 6)}`}
+                </a>
+              </p>
+            )}
           </div>
         )}
 
@@ -224,6 +239,32 @@ export const Deposit = () => {
                   {status === 'success' ? 'Success' : 'Error'}
                 </h3>
                 <p className="text-sm mt-1">{result.message}</p>
+                {result.depositTxHash && (
+                  <p className="text-sm mt-1">
+                    $ETH deposit received on Base Mainnet:{' '}
+                    <a
+                      href={`https://base.blockscout.com/tx/${result.depositTxHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline"
+                    >
+                      {result.depositTxHash.substring(0, 10)}...
+                    </a>
+                  </p>
+                )}
+                {result.tokenTxHash && (
+                  <p className="text-sm mt-1">
+                    10,000 $MCRV tokens sent on Base Sepolia:{' '}
+                    <a
+                      href={`https://base-sepolia.blockscout.com/tx/${result.tokenTxHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline"
+                    >
+                      {result.tokenTxHash.substring(0, 10)}...
+                    </a>
+                  </p>
+                )}
               </div>
             </div>
             {status === 'success' && (
@@ -253,17 +294,13 @@ export const Deposit = () => {
           </button>
         )}
 
-        {(status === 'success' || status === 'error') && (
+        {status === 'error' && (
           <button
             type="button"
             onClick={handleReset}
-            className={`px-6 py-3 rounded-lg transition-colors ${
-              status === 'success'
-                ? 'border border-gray-700 bg-gray-800 hover:bg-gray-700 text-white'
-                : 'bg-yellow-500 hover:bg-yellow-600 text-black font-bold'
-            }`}
+            className="px-6 py-3 rounded-lg transition-colors bg-yellow-500 hover:bg-yellow-600 text-black font-bold"
           >
-            {status === 'success' ? 'Done' : 'Try Again'}
+            Try Again
           </button>
         )}
       </div>

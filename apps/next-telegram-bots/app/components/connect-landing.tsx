@@ -7,9 +7,11 @@ import { RegisterTelegram } from '@/app/components/sign-message';
 import { PulsatingButton } from '@/app/components/ui/pulsating-button';
 import { usePrivy } from '@privy-io/react-auth';
 import { useEffect, useState } from 'react';
+import { useAccount } from 'wagmi';
 
 export const ConnectLanding = ({ id }: { id: string }) => {
   const { authenticated, user, ready } = usePrivy();
+  const { isConnected } = useAccount();
   const [isWalletLinked, setIsWalletLinked] = useState<boolean | null>(null);
   const [isWalletDeposit, setIsWalletDeposit] = useState<boolean | null>(null);
 
@@ -75,7 +77,7 @@ export const ConnectLanding = ({ id }: { id: string }) => {
               $ETH to participate in the Midcurve.live community
             </p>
           </div>
-          <div className="p-6">
+          <div className="p-6 space-y-4">
             {/* Only show connect button if not authenticated */}
             {!authenticated && (
               <div className="flex justify-center mb-6 min-h-[40.8px]">
@@ -98,32 +100,32 @@ export const ConnectLanding = ({ id }: { id: string }) => {
               </div>
             )}
 
-            {/* Show deposit section only if wallet is linked */}
-            {id && authenticated && isWalletLinked === true && <Deposit />}
             {id &&
-              authenticated &&
-              isWalletLinked === true &&
-              isWalletDeposit === true && (
-                <div className="flex flex-col gap-3">
-                  <div className="text-center bg-green-900/30 text-green-400 p-4 rounded-lg border border-green-800">
-                    <p>
-                      Connected wallet has already made a successful deposit of
-                      min. .001 $ETH, feel free to deposit more!
-                    </p>
-                  </div>
-
-                  <a
-                    className="w-full flex justify-center items-center"
-                    href="https://t.me/midcurvelive"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <PulsatingButton className="text-black font-bold w-full md:w-1/3 hover:animate-pulse">
-                      Join the Midcurve Chat
-                    </PulsatingButton>
-                  </a>
+            authenticated &&
+            isWalletLinked === true &&
+            isWalletDeposit === true ? (
+              <div className="flex flex-col gap-3">
+                <div className="text-center bg-green-900/30 text-green-400 p-4 rounded-lg border border-green-800">
+                  <p>
+                    Connected wallet has already made a successful deposit of
+                    min. .001 $ETH, feel free to deposit more!
+                  </p>
                 </div>
-              )}
+
+                <a
+                  className="w-full flex justify-center items-center"
+                  href="https://t.me/midcurvelive"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <PulsatingButton className="text-black font-bold w-full md:w-1/3 hover:animate-pulse">
+                    Join the Midcurve Chat
+                  </PulsatingButton>
+                </a>
+              </div>
+            ) : isConnected ? (
+              <Deposit />
+            ) : null}
           </div>
         </div>
 

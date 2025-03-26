@@ -1,7 +1,7 @@
 import { type Filter, ObjectId, type WithoutId } from 'mongodb';
 import { z } from 'zod';
 
-import { AGENT_WALLET_ADDRESS, USERS_COLLECTION } from '@/lib/constants';
+import { USERS_COLLECTION } from '@/lib/constants';
 import { BaseService } from '@/lib/services/base.service';
 import { toObjectId } from '@/lib/telegram/utils';
 
@@ -151,126 +151,5 @@ export class UserService extends BaseService {
 
   async findUserByEvmAddress(evmAddress: string): Promise<UserDTO | null> {
     return this.findUser({ evmAddress });
-  }
-
-  async fetchDepositTransactions(): Promise<
-    Array<{ from: string; value: string; hash: string }>
-  > {
-    try {
-      const response = await fetch(
-        `https://api.basescan.org/api?module=account&action=txlist&address=${AGENT_WALLET_ADDRESS}&startblock=0&endblock=latest&page=1&offset=100&sort=desc&apikey=${process.env.BASESCAN_API}`
-      );
-      const data = await response.json();
-
-      if (data.status !== '1') {
-        throw new Error('Failed to fetch transactions from Base Network');
-      }
-
-      return data.result
-        .filter(
-          (tx: {
-            from: string;
-            to: string;
-            value: string;
-            hash: string;
-            txreceipt_status: string;
-          }) =>
-            tx.to.toLowerCase() === AGENT_WALLET_ADDRESS.toLowerCase() &&
-            Number.parseFloat(tx.value) >= 0.001 &&
-            tx.txreceipt_status === '1'
-        )
-        .map((tx: { from: string; value: string; hash: string }) => ({
-          from: tx.from.toLowerCase(),
-          value: tx.value,
-          hash: tx.hash,
-        }));
-    } catch (error) {
-      console.error('Failed to fetch deposit transactions:', error);
-      throw error;
-    }
-  }
-
-  async updateAllUserDeposits(): Promise<void> {
-    try {
-      const depositTxs = await this.fetchDepositTransactions();
-      const users = await this.getAllUsers();
-
-      for (const user of users) {
-        if (!user.evmAddress) continue;
-
-        const userDepositTx = depositTxs.find(
-          (tx) => tx.from === user.evmAddress?.toLowerCase()
-        );
-
-        if (userDepositTx) {
-          const depositAmount = Number.parseFloat(userDepositTx.value) / 1e18;
-          await this.updateUser(
-            { telegramId: user.telegramId },
-            {
-              depositHash: userDepositTx.hash,
-              depositAmount: depositAmount,
-            }
-          );
-        }
-      }
-    } catch (error) {
-      console.error('Failed to update all user deposits:', error);
-      throw error;
-    }
-  }
-
-  async updateUserDeposit(
-    telegramId: number,
-    evmAddress: string
-  ): Promise<{ success: boolean; deposit?: string; depositAmount?: number }> {
-    try {
-      const user = await this.findUserByEvmAddress(evmAddress);
-
-      if (!user || user.telegramId !== telegramId) {
-        throw new Error('User not found');
-      }
-
-      const response = await fetch(
-        `https://api.basescan.org/api?module=account&action=txlist&address=${evmAddress}&startblock=0&endblock=latest&page=1&offset=2&sort=desc&apikey=${process.env.BASESCAN_API}`
-      );
-      const data = await response.json();
-
-      if (data.status !== '1') {
-        throw new Error('Failed to fetch transactions from Base Network');
-      }
-
-      const transactions = data.result;
-      const matchingTx = transactions.find(
-        (tx: {
-          from: string;
-          to: string;
-          value: string;
-          txreceipt_status: string;
-          hash: string;
-        }) =>
-          tx.from.toLowerCase() === evmAddress.toLowerCase() &&
-          tx.to.toLowerCase() === AGENT_WALLET_ADDRESS.toLowerCase() &&
-          Number.parseFloat(tx.value) >= 5 &&
-          tx.txreceipt_status === '1'
-      );
-
-      if (!matchingTx) {
-        throw new Error('No deposit transaction has been found');
-      }
-
-      const depositAmount = Number.parseFloat(matchingTx.value) / 1e18;
-      await this.updateUser(
-        { telegramId },
-        {
-          depositHash: matchingTx.hash,
-          depositAmount: depositAmount,
-        }
-      );
-
-      return { success: true, deposit: matchingTx.hash, depositAmount };
-    } catch (error) {
-      console.error('Failed to update user deposit:', error);
-      throw error;
-    }
   }
 }

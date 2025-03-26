@@ -6,17 +6,23 @@ const inter = Inter({
   weight: ['400', '700'],
 });
 
-import { PrivyProvider } from '@/app/components/privy-provider';
+import { PrivyProvider } from '@/app/components/providers/privy-provider';
+import { WagmiProvider } from '@/app/components/providers/wagmi-provider';
+import { headers } from 'next/headers';
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.JSX.Element;
 }) {
+  const cookies = (await headers()).get('cookie');
+
   return (
     <html lang="en">
       <body className={inter.className}>
-        <PrivyProvider>{children}</PrivyProvider>
+        <PrivyProvider>
+          <WagmiProvider cookies={cookies}>{children}</WagmiProvider>
+        </PrivyProvider>
       </body>
     </html>
   );

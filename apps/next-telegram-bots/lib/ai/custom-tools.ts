@@ -1,37 +1,27 @@
 import { type ToolSet, tool } from 'ai';
 import {
-  http,
   type Address,
-  createPublicClient,
   erc20Abi,
   formatEther,
-  parseEther,
+  parseEther
 } from 'viem';
 import { z } from 'zod';
 
 import { createToolsWithOverrides } from '@/lib/ai/tools/utils';
 import { getBaseUrl } from '@/lib/config';
-import { getRpcUrl } from '@/lib/constants';
 import { getTaskService, getUserService } from '@/lib/services';
 import { TaskStatus } from '@/lib/services/tasks.service';
 import { encryptUserId } from '@/lib/telegram/utils';
 import { generateRandomReward } from '@/lib/utils/rewards';
-import { walletClient } from '@/lib/wallet';
-import { baseSepolia } from 'viem/chains';
+import {
+  mainnetPublicClient,
+  mainnetWalletClient,
+  testnetPublicClient
+} from '@/lib/clients';
 
 const MAXIMUM_COOLDOWN_MS = 2 * 24 * 60 * 60 * 1000; // 2 days
 const COOLDOWN_MULTIPLIER_MS = 4320000; // 1.2 hours per ETH reward
 const REQUIRED_MCRV_BALANCE = 10000; // 10k MCRV tokens required to create a task
-
-const publicClient = createPublicClient({
-  chain: baseSepolia,
-  transport: http(getRpcUrl(baseSepolia.id)),
-});
-
-const testnetPublicClient = createPublicClient({
-  chain: baseSepolia,
-  transport: http(getRpcUrl(baseSepolia.id)),
-});
 
 const calculateRewardCooldownDate = (rewardAmount: number) => {
   if (rewardAmount < 1) {
@@ -90,15 +80,13 @@ export const getConnectLink = tool({
 export const getETHBalance = tool({
   type: 'function',
   parameters: z.object({
-    userEvmAddress: z
-      .string()
-      .describe('The evm address of the user to get balance for'),
+    evmAddress: z.string().describe('The evm address to get ETH balance for'),
   }),
   description: 'Get the ETH balance for an evm address',
-  execute: async ({ userEvmAddress }) => {
+  execute: async ({ evmAddress }) => {
     try {
-      const balance = await publicClient.getBalance({
-        address: userEvmAddress as `0x${string}`,
+      const balance = await mainnetPublicClient.getBalance({
+        address: evmAddress as `0x${string}`,
       });
 
       return { result: formatEther(balance) };
@@ -112,21 +100,21 @@ export const getETHBalance = tool({
 export const getMCRVBalance = tool({
   type: 'function',
   parameters: z.object({
-    userEvmAddress: z
+    evmAddress: z
       .string()
-      .describe('The address to get MCRV token balance for'),
+      .describe('The evm address to get MCRV token balance for'),
   }),
   description: 'Get the MCRV token balance for an evm address',
-  execute: async ({ userEvmAddress }) => {
+  execute: async ({ evmAddress }) => {
     try {
       const balance = await testnetPublicClient.readContract({
         abi: erc20Abi,
         address: process.env.TOKEN_ADDRESS as `0x${string}`,
         functionName: 'balanceOf',
-        args: [userEvmAddress as `0x${string}`],
+        args: [evmAddress as `0x${string}`],
       });
 
-      console.log(`User ${userEvmAddress} has ${balance} MCRV tokens`);
+      console.log(`Address ${evmAddress} has ${balance} MCRV tokens`);
 
       return { result: formatEther(balance) };
     } catch (error) {
@@ -140,7 +128,11 @@ export const createTask = tool({
   type: 'function',
   parameters: z.object({
     userId: z.number().describe('Telegram id of the user creating the task'),
-    prompt: z.string().describe('The prompt for the task to create'),
+    prompt: z
+      .string()
+      .describe(
+        'The task prompt for the agent.  The agent will perform the task on livestream'
+      ),
   }),
   description:
     'Creates a task if user has at least 10k MCRV tokens and no pending tasks',
@@ -219,9 +211,13 @@ export const createTask = tool({
 });
 
 export const sendETHReward = tool({
-  description: 'Trigger a reward chance for a user.  Jackpot amount is 100 ETH',
+  description: 'Trigger a reward chance for a user.',
   parameters: z.object({
-    recipient: z.string().describe('The address to send ETH to'),
+    recipient: z
+      .string()
+      .describe(
+        'The address to send ETH to.  This address must be registered with a user.'
+      ),
   }),
   execute: async ({ recipient }) => {
     try {
@@ -244,13 +240,14 @@ export const sendETHReward = tool({
 
       const rewardAmountString = rewardAmount.toString();
 
-      const hash = await walletClient.sendTransaction({
+      const hash = await mainnetWalletClient.sendTransaction({
         to: recipient as Address,
         value: parseEther(rewardAmountString),
-        account: walletClient.account,
       });
 
-      const { status } = await publicClient.waitForTransactionReceipt({ hash });
+      const { status } = await mainnetPublicClient.waitForTransactionReceipt({
+        hash,
+      });
 
       // Update user's total rewards
       if (status === 'reverted') {

@@ -54,5 +54,8 @@
   },
   "trustedDependencies": ["@biomejs/biome"],
   "type": "module",
-  "workspaces": ["apps/*"]
+  "workspaces": ["apps/*"],
+  "dependencies": {
+    "@privy-io/wagmi": "^1.0.3"
+  }
 }
