@@ -45,6 +45,9 @@ pulseaudio -D --exit-idle-time=-1
 pacmd load-module module-null-sink sink_name=virtual_speaker sink_properties=device.description=virtual_speaker
 pacmd load-module module-virtual-source source_name=virtual_mic master=virtual_speaker.monitor source_properties=device.description=virtual_mic
 
+# Set virtual_mic as the default source
+pacmd set-default-source virtual_mic
+
 # Add delay to ensure PulseAudio is fully initialized
 sleep 3
 # Set the default source and sink for better stability
@@ -149,7 +152,7 @@ while [ $FFMPEG_RETRY_COUNT -lt $MAX_FFMPEG_RETRIES ] && [ "$FFMPEG_SUCCESS" = f
         echo "RTMP server is available, starting stream..."
         
         ffmpeg -f x11grab -framerate "$FPS" -s "$RESOLUTION" -i :99 \
-            -f pulse -i default \
+            -f pulse -i virtual_mic \
             -c:v libx264 -pix_fmt yuv420p -preset veryfast \
             -b:v "$VIDEO_BITRATE" -maxrate "$VIDEO_BITRATE" -bufsize "$VIDEO_BITRATE" \
             -c:a aac -b:a "$AUDIO_BITRATE" -ar 44100 \
