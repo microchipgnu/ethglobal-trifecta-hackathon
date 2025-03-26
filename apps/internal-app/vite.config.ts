@@ -45,5 +45,6 @@ export default defineConfig({
       process.env.TARGET_VNC_PATH
     ),
     'import.meta.env.VITE_NODE_ENV': JSON.stringify(process.env.NODE_ENV),
+    'import.meta.env.VITE_TG_BEARER_TOKEN': JSON.stringify(process.env.NEXT_TG_BEARER_TOKEN),
   },
 });

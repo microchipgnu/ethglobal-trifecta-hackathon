@@ -22,6 +22,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends --fix-missing c
 # Set up environment variables
 ENV DISPLAY=:99
 ENV CHROME_PATH=/usr/bin/chromium
+ENV CHROME_FLAGS="--no-sandbox --disable-gpu --autoplay-policy=no-user-gesture-required"
 
 # Ensure X11 directory exists
 RUN mkdir -p /tmp/.X11-unix && \

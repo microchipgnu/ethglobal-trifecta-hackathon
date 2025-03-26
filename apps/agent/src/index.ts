@@ -27,12 +27,9 @@ export const executePrompt = async (
 
   await setAgentState({
     state: 'received_prompt',
-    model: 'gpt-4o',
-    provider: 'openai',
     message: `Received prompt: ${
       prompt.length > 100 ? `${prompt.substring(0, 100)}...` : prompt
     }`,
-    timestamp: new Date().toISOString(),
   });
 
   // Classify the prompt with enhanced schema that supports multiple groups
@@ -78,10 +75,7 @@ export const executePrompt = async (
 
   await setAgentState({
     state: 'prompt_classified',
-    model: 'gpt-4o',
-    provider: 'openai',
     message: `Classified prompt as ${uniqueGroups.join(', ')}`,
-    timestamp: new Date().toISOString(),
   });
 
   // Use multi-group selection if we have multiple groups, otherwise use single group
@@ -111,10 +105,7 @@ export const executePrompt = async (
 
   await setAgentState({
     state: 'tools_selected',
-    model: 'gpt-4o',
-    provider: 'openai',
     message: `Selected ${toolCount} tools from ${groupsUsed}`,
-    timestamp: new Date().toISOString(),
   });
 
   // Generate a plan for executing the prompt
@@ -123,10 +114,7 @@ export const executePrompt = async (
 
   await setAgentState({
     state: 'plan_created',
-    model: 'gpt-4o',
-    provider: 'openai',
     message: `Created plan with ${plan.steps.length} steps: ${plan.summary}`,
-    timestamp: new Date().toISOString(),
   });
 
   // Store the plan in Redis for potential future reference
@@ -205,10 +193,7 @@ Please follow this plan to complete the task efficiently.
 
     setAgentState({
       state: 'tool_used',
-      model: 'o3-mini',
-      provider: 'openai',
       message: `Used tool: ${toolCall.toolName}${stepInfo}`,
-      timestamp: new Date().toISOString(),
     });
 
     // Sleep for 3 seconds
@@ -230,17 +215,24 @@ Please follow this plan to complete the task efficiently.
 
   redisClient.set('agent_message', result.text);
 
-  await setAgentState({
-    state: 'idle',
-    model: 'o3-mini',
-    provider: 'openai',
-    message: `Task completed (${percentComplete}% of planned steps)`,
-    timestamp: new Date().toISOString(),
-  });
 
   redisClient.append('messages', {
     role: 'assistant',
     content: result.text,
+  });
+
+
+  await setAgentState({
+    state: 'task_completed',
+    message: result.text,
+  });
+
+  // Wait for 5 seconds before setting the final idle state
+  await new Promise((resolve) => setTimeout(resolve, 5000));
+
+  await setAgentState({
+    state: 'idle',
+    message: `Waiting for next task...`,
   });
 
   return result;

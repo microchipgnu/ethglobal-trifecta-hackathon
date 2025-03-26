@@ -8,6 +8,7 @@ COPY bun.lock .
 COPY turbo.json .
 COPY biome.json .
 COPY tsconfig.json .
+COPY .env .
 
 COPY apps/internal-app /app/apps/internal-app
 

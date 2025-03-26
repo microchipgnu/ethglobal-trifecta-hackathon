@@ -11,9 +11,11 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.0.15",
+    "lightweight-charts": "^5.0.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "tailwindcss": "^4.0.15"
+    "tailwindcss": "^4.0.15",
+    "viem": "^2.23.15"
   },
   "devDependencies": {
     "@types/bun": "1.2.5",

@@ -40,7 +40,12 @@ echo "Started Xvfb with PID: $XVFB_PID"
 # -----------------------
 export XDG_RUNTIME_DIR=/tmp/runtime-root
 pulseaudio -D --exit-idle-time=-1
-echo "Started PulseAudio"
+
+# Create a virtual audio device
+pacmd load-module module-null-sink sink_name=virtual_speaker sink_properties=device.description=virtual_speaker
+pacmd load-module module-virtual-source source_name=virtual_mic master=virtual_speaker.monitor source_properties=device.description=virtual_mic
+
+echo "Started PulseAudio with virtual devices"
 
 # -----------------------
 # 3) Construct the target URL
@@ -106,6 +111,7 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ] && [ "$SUCCESS" = false ]; do
             --window-size=${RESOLUTION%x*},${RESOLUTION#*x} \
             --start-maximized \
             --background-color=white \
+            --autoplay-policy=no-user-gesture-required \
             --kiosk "$FULL_TARGET_URL" &
         CHROME_PID=$!
         SUCCESS=true
@@ -140,8 +146,10 @@ while [ $FFMPEG_RETRY_COUNT -lt $MAX_FFMPEG_RETRIES ] && [ "$FFMPEG_SUCCESS" = f
         echo "RTMP server is available, starting stream..."
         
         ffmpeg -f x11grab -framerate "$FPS" -s "$RESOLUTION" -i :99 \
+            -f pulse -i default \
             -c:v libx264 -pix_fmt yuv420p -preset veryfast \
             -b:v "$VIDEO_BITRATE" -maxrate "$VIDEO_BITRATE" -bufsize "$VIDEO_BITRATE" \
+            -c:a aac -b:a "$AUDIO_BITRATE" \
             -g 60 -keyint_min 60 -x264opts "keyint=60:min-keyint=60:no-scenecut" \
             -f flv "$RTMP_URL"
             
