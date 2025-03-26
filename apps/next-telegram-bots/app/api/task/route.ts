@@ -84,7 +84,19 @@ export const PUT = async (req: NextRequest) => {
     }
 
     const data = await req.json();
+
     const taskService = await getTaskService();
+
+    // If status is being updated, use updateTaskStatus instead of general update
+    if (data.status) {
+      const result = await taskService.updateTaskStatus(id, data.status);
+      if (!result.success) {
+        return NextResponse.json({ error: result.error }, { status: 400 });
+      }
+      return NextResponse.json(result.task, { status: 200 });
+    }
+
+    // For non-status updates
     const task = await taskService.updateTask({ _id: toObjectId(id) }, data);
 
     if (!task) {

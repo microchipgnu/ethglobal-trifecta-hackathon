@@ -660,6 +660,8 @@ export const openApiSpec = createDocument({
                 id: true,
                 createdAt: true,
                 updatedAt: true,
+                startedAt: true,
+                completedAt: true,
               }),
             },
           },

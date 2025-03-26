@@ -184,8 +184,12 @@ export class TaskService extends BaseService {
   ): Promise<TaskDTO | null> {
     try {
       const now = new Date();
+
+      // Create a clean version of the DTO without date fields that should be managed automatically
+      const { startedAt, completedAt, ...cleanDto } = dto;
+
       const candidate = taskEntitySchema.partial().parse({
-        ...dto,
+        ...cleanDto,
         updatedAt: now,
       });
 
@@ -229,7 +233,8 @@ export class TaskService extends BaseService {
 
   async updateTaskStatus(
     id: string,
-    status: (typeof TaskStatus)[keyof typeof TaskStatus]
+    status: (typeof TaskStatus)[keyof typeof TaskStatus],
+    summary?: string
   ): Promise<{ success: boolean; task: TaskDTO | null; error?: string }> {
     try {
       // First, get the current task to check its status
@@ -239,7 +244,7 @@ export class TaskService extends BaseService {
       }
 
       const now = new Date();
-      const updates: Partial<TaskEntity> = { status };
+      const updates: Partial<TaskEntity> = { status, summary };
       let validTransition = false;
 
       // Validate state transitions
@@ -257,6 +262,7 @@ export class TaskService extends BaseService {
           if (currentTask.status === TaskStatus.PENDING) {
             validTransition = true;
             updates.startedAt = now;
+            updates.summary = summary;
           } else {
             return {
               success: false,
@@ -271,6 +277,7 @@ export class TaskService extends BaseService {
           if (currentTask.status === TaskStatus.IN_PROGRESS) {
             validTransition = true;
             updates.completedAt = now;
+            updates.summary = summary;
           } else {
             return {
               success: false,
@@ -287,6 +294,7 @@ export class TaskService extends BaseService {
             // If it was in progress, set completedAt
             if (currentTask.status === TaskStatus.IN_PROGRESS) {
               updates.completedAt = now;
+              updates.summary = summary;
             }
           } else {
             return {
