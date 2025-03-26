@@ -101,11 +101,4 @@ export const startTaskLoop = async () => {
   }
 };
 
-// Start the loop if this file is executed directly
-if (require.main === module) {
-  console.log('Starting task processing loop...');
-  startTaskLoop().catch((error) => {
-    console.error('Fatal error in task loop:', error);
-    process.exit(1);
-  });
-}
+startTaskLoop();
