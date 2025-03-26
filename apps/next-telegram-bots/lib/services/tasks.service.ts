@@ -90,16 +90,19 @@ export class TaskService extends BaseService {
   async getAllTasks(): Promise<TaskDTO[]> {
     try {
       // Get all tasks
-      const entities = await this.getCollection()
-        .find({
-          status: {
-            $in: [TaskStatus.IN_PROGRESS, TaskStatus.PENDING],
-          },
-        })
-        .sort({ createdAt: -1 })
-        .toArray();
+      const entities = await this.getCollection().find({}).toArray();
 
-      return entities.map((entity: TaskEntity) =>
+      // Sort tasks by status priority and then by createdAt (oldest first)
+      const sortedEntities = entities.sort((a, b) => {
+        // First sort by status priority
+        const statusComparison = statusOrder[a.status] - statusOrder[b.status];
+        if (statusComparison !== 0) return statusComparison;
+
+        // Then sort by createdAt (oldest first)
+        return a.createdAt.getTime() - b.createdAt.getTime();
+      });
+
+      return sortedEntities.map((entity: TaskEntity) =>
         TaskDTO.convertFromEntity(entity)
       );
     } catch (error) {
