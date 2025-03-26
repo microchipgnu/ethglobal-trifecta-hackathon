@@ -39,18 +39,26 @@ echo "Started Xvfb with PID: $XVFB_PID"
 # 2) Start PulseAudio
 # -----------------------
 export XDG_RUNTIME_DIR=/tmp/runtime-root
-pulseaudio -D --exit-idle-time=-1
+echo "Starting PulseAudio..."
+mkdir -p $XDG_RUNTIME_DIR
+chmod 700 $XDG_RUNTIME_DIR
+pulseaudio -D --exit-idle-time=-1 || { echo "Failed to start PulseAudio"; exit 1; }
+sleep 2  # Give PulseAudio time to start
 
-# Create a virtual audio device
-pacmd load-module module-null-sink sink_name=virtual_speaker sink_properties=device.description=virtual_speaker
-pacmd load-module module-virtual-source source_name=virtual_mic master=virtual_speaker.monitor source_properties=device.description=virtual_mic
+# Create a virtual audio device with error checking
+echo "Creating virtual audio devices..."
+pacmd list-sinks > /tmp/pulseaudio_debug_pre.log 2>&1
+pacmd load-module module-null-sink sink_name=virtual_speaker sink_properties=device.description=virtual_speaker > /tmp/pulse_sink.log 2>&1
+pacmd load-module module-virtual-source source_name=virtual_mic master=virtual_speaker.monitor source_properties=device.description=virtual_mic > /tmp/pulse_source.log 2>&1
 
-# Set virtual_mic as the default source
+# Check and set default source with verification
+echo "Setting default audio source..."
 pacmd set-default-source virtual_mic
+pacmd list-sources > /tmp/pulseaudio_debug_post.log 2>&1
+pacmd info > /tmp/pulseaudio_info.log 2>&1
 
-# Add delay to ensure PulseAudio is fully initialized
-sleep 3
-# Set the default source and sink for better stability
+# Add more delay to ensure PulseAudio is fully initialized
+sleep 5
 echo "Started PulseAudio"
 
 # -----------------------
@@ -151,17 +159,27 @@ while [ $FFMPEG_RETRY_COUNT -lt $MAX_FFMPEG_RETRIES ] && [ "$FFMPEG_SUCCESS" = f
     if nc -z -w5 srs 1935; then
         echo "RTMP server is available, starting stream..."
         
-        ffmpeg -f x11grab -framerate "$FPS" -s "$RESOLUTION" -i :99 \
-            -f pulse -i virtual_mic \
-            -c:v libx264 -pix_fmt yuv420p -preset veryfast \
-            -b:v "$VIDEO_BITRATE" -maxrate "$VIDEO_BITRATE" -bufsize "$VIDEO_BITRATE" \
-            -c:a aac -b:a "$AUDIO_BITRATE" -ar 44100 \
-            -g 60 -keyint_min 60 -x264opts "keyint=60:min-keyint=60:no-scenecut" \
-            -f flv "$RTMP_URL"
-            
-        # If ffmpeg exits with success, break the loop
-        if [ $? -eq 0 ]; then
+        # First try with virtual_mic, if that fails fall back to no audio
+        if ffmpeg -f x11grab -framerate "$FPS" -s "$RESOLUTION" -i :99 \
+           -f pulse -i virtual_mic -f pulse -ac 2 \
+           -c:v libx264 -pix_fmt yuv420p -preset veryfast \
+           -b:v "$VIDEO_BITRATE" -maxrate "$VIDEO_BITRATE" -bufsize "$VIDEO_BITRATE" \
+           -c:a aac -b:a "$AUDIO_BITRATE" -ar 44100 \
+           -g 60 -keyint_min 60 -x264opts "keyint=60:min-keyint=60:no-scenecut" \
+           -f flv "$RTMP_URL"; then
             FFMPEG_SUCCESS=true
+        else
+            echo "Failed with virtual_mic, trying without audio..."
+            # Fallback to video-only if audio fails
+            ffmpeg -f x11grab -framerate "$FPS" -s "$RESOLUTION" -i :99 \
+              -c:v libx264 -pix_fmt yuv420p -preset veryfast \
+              -b:v "$VIDEO_BITRATE" -maxrate "$VIDEO_BITRATE" -bufsize "$VIDEO_BITRATE" \
+              -g 60 -keyint_min 60 -x264opts "keyint=60:min-keyint=60:no-scenecut" \
+              -f flv "$RTMP_URL"
+              
+            if [ $? -eq 0 ]; then
+                FFMPEG_SUCCESS=true
+            fi
         fi
     else
         FFMPEG_RETRY_COUNT=$((FFMPEG_RETRY_COUNT+1))
