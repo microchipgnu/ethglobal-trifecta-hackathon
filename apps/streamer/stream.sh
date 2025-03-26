@@ -23,6 +23,10 @@ VIDEO_BITRATE=${VIDEO_BITRATE:-"2500k"}
 AUDIO_BITRATE=${AUDIO_BITRATE:-"128k"}
 FPS=${FPS:-30}
 
+# Use a different display number than computer container
+DISPLAY_NUM=98
+export DISPLAY=:${DISPLAY_NUM}
+
 # Add debugging for network connectivity
 echo "Starting streamer..."
 echo "Checking connectivity to SRS server..."
@@ -31,7 +35,7 @@ ping -c 2 srs || echo "Cannot ping SRS server - network issue"
 # -----------------------
 # 1) Start Xvfb
 # -----------------------
-Xvfb :99 -screen 0 $RESOLUTION"x24" &
+Xvfb :${DISPLAY_NUM} -screen 0 $RESOLUTION"x24" &
 XVFB_PID=$!
 echo "Started Xvfb with PID: $XVFB_PID"
 
@@ -42,7 +46,7 @@ export XDG_RUNTIME_DIR=/tmp/runtime-root
 echo "Starting PulseAudio..."
 mkdir -p $XDG_RUNTIME_DIR
 chmod 700 $XDG_RUNTIME_DIR
-pulseaudio -D --exit-idle-time=-1 || { echo "Failed to start PulseAudio"; exit 1; }
+pulseaudio --system -D --exit-idle-time=-1 || { echo "Failed to start PulseAudio"; exit 1; }
 sleep 2  # Give PulseAudio time to start
 
 # Create a virtual audio device with error checking
@@ -91,22 +95,22 @@ cleanup() {
         echo "Using kill for cleanup"
         kill $(ps aux | grep -E 'Xvfb|ffmpeg|chromium' | grep -v grep | awk '{print $2}') 2>/dev/null || true
     fi
-    rm -f /tmp/.X99-lock
-    rm -f /tmp/.X11-unix/X99
+    rm -f /tmp/.X${DISPLAY_NUM}-lock
+    rm -f /tmp/.X11-unix/X${DISPLAY_NUM}
     exit 0
 }
 
 trap cleanup SIGTERM SIGINT
 
 echo "Removing any leftover X locks..."
-rm -f /tmp/.X99-lock
-rm -f /tmp/.X11-unix/X99
+rm -f /tmp/.X${DISPLAY_NUM}-lock
+rm -f /tmp/.X11-unix/X${DISPLAY_NUM}
 
 # -----------------------
 # 4) Start Xvfb
 # -----------------------
 echo "Starting Xvfb with resolution: $RESOLUTION..."
-Xvfb :99 -screen 0 $RESOLUTION"x24" &
+Xvfb :${DISPLAY_NUM} -screen 0 $RESOLUTION"x24" &
 XVFB_PID=$!
 sleep 2  # Give Xvfb time to start
 
@@ -152,7 +156,7 @@ echo "Starting PulseAudio health monitoring..."
   while true; do
     if ! pulseaudio --check; then
       echo "PulseAudio died, restarting..."
-      pulseaudio -D --exit-idle-time=-1
+      pulseaudio --system -D --exit-idle-time=-1
       # Recreate virtual devices
       sleep 2
       pacmd load-module module-null-sink sink_name=virtual_speaker sink_properties=device.description=virtual_speaker
@@ -194,7 +198,7 @@ while [ $FFMPEG_RETRY_COUNT -lt $MAX_FFMPEG_RETRIES ] && [ "$FFMPEG_SUCCESS" = f
         echo "RTMP server is available, starting stream..."
         
         # First try with virtual_mic, if that fails fall back to no audio
-        if ffmpeg -f x11grab -framerate "$FPS" -s "$RESOLUTION" -i :99 \
+        if ffmpeg -f x11grab -framerate "$FPS" -s "$RESOLUTION" -i :${DISPLAY_NUM} \
            -f pulse -i virtual_mic -f pulse -ac 2 \
            -c:v libx264 -pix_fmt yuv420p -preset veryfast \
            -b:v "$VIDEO_BITRATE" -maxrate "$VIDEO_BITRATE" -bufsize "$VIDEO_BITRATE" \
@@ -205,7 +209,7 @@ while [ $FFMPEG_RETRY_COUNT -lt $MAX_FFMPEG_RETRIES ] && [ "$FFMPEG_SUCCESS" = f
         else
             echo "Failed with virtual_mic, trying without audio..."
             # Fallback to video-only if audio fails
-            ffmpeg -f x11grab -framerate "$FPS" -s "$RESOLUTION" -i :99 \
+            ffmpeg -f x11grab -framerate "$FPS" -s "$RESOLUTION" -i :${DISPLAY_NUM} \
               -c:v libx264 -pix_fmt yuv420p -preset veryfast \
               -b:v "$VIDEO_BITRATE" -maxrate "$VIDEO_BITRATE" -bufsize "$VIDEO_BITRATE" \
               -g 60 -keyint_min 60 -x264opts "keyint=60:min-keyint=60:no-scenecut" \
@@ -230,4 +234,4 @@ fi
 cleanup
 
 echo "Streamer stopped"
-exit 0
+exit 0 
