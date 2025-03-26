@@ -25,35 +25,32 @@ ENV CHROME_PATH=/usr/bin/chromium
 ENV CHROME_FLAGS="--no-sandbox --disable-gpu --autoplay-policy=no-user-gesture-required"
 ENV PULSE_SERVER=unix:/var/run/pulse/native
 
-# Configure PulseAudio for system mode - simpler approach
+# Configure PulseAudio for system mode
 RUN mkdir -p /etc/pulse
-RUN cat > /etc/pulse/client.conf << EOF
-default-server = unix:/var/run/pulse/native
-autospawn = no
-daemon-binary = /bin/true
-EOF
+RUN echo '#!/usr/bin/pulseaudio -nF' > /etc/pulse/system.pa && \
+    echo 'load-module module-device-restore' >> /etc/pulse/system.pa && \
+    echo 'load-module module-stream-restore' >> /etc/pulse/system.pa && \
+    echo 'load-module module-card-restore' >> /etc/pulse/system.pa && \
+    echo 'load-module module-always-sink' >> /etc/pulse/system.pa && \
+    echo 'load-module module-always-source' >> /etc/pulse/system.pa && \
+    echo 'load-module module-native-protocol-unix auth-anonymous=1 socket=/var/run/pulse/native' >> /etc/pulse/system.pa && \
+    echo 'load-module module-default-device-restore' >> /etc/pulse/system.pa && \
+    echo 'load-module module-rescue-streams' >> /etc/pulse/system.pa && \
+    echo 'load-module module-intended-roles' >> /etc/pulse/system.pa && \
+    echo 'load-module module-suspend-on-idle' >> /etc/pulse/system.pa && \
+    echo 'load-module module-position-event-sounds' >> /etc/pulse/system.pa && \
+    echo 'load-module module-role-cork' >> /etc/pulse/system.pa && \
+    echo 'load-module module-filter-heuristics' >> /etc/pulse/system.pa && \
+    echo 'load-module module-filter-apply' >> /etc/pulse/system.pa && \
+    echo 'load-module module-null-sink sink_name=virtual_speaker sink_properties=device.description=virtual_speaker' >> /etc/pulse/system.pa && \
+    echo 'load-module module-virtual-source source_name=virtual_mic master=virtual_speaker.monitor source_properties=device.description=virtual_mic' >> /etc/pulse/system.pa && \
+    echo 'set-default-source virtual_mic' >> /etc/pulse/system.pa && \
+    echo 'set-default-sink virtual_speaker' >> /etc/pulse/system.pa
 
-RUN cat > /etc/pulse/daemon.conf << EOF
-exit-idle-time = -1
-realtime-scheduling = yes
-realtime-priority = 5
-lock-memory = yes
-high-priority = yes
-nice-level = -11
-EOF
-
-RUN cat > /etc/pulse/system.pa << EOF
-#!/usr/bin/pulseaudio -nF
-load-module module-device-restore
-load-module module-stream-restore
-load-module module-card-restore
-load-module module-udev-detect
-load-module module-native-protocol-unix auth-anonymous=1 socket=/var/run/pulse/native
-load-module module-null-sink sink_name=virtual_speaker sink_properties=device.description=virtual_speaker
-load-module module-virtual-source source_name=virtual_mic master=virtual_speaker.monitor source_properties=device.description=virtual_mic
-set-default-source virtual_mic
-set-default-sink virtual_speaker
-EOF
+RUN echo "default-server = unix:/var/run/pulse/native" > /etc/pulse/client.conf && \
+    echo "autospawn = no" >> /etc/pulse/client.conf && \
+    echo "daemon-binary = /bin/true" >> /etc/pulse/client.conf && \
+    chmod 644 /etc/pulse/client.conf /etc/pulse/system.pa
 
 # Create necessary directories with proper permissions
 RUN mkdir -p /var/run/pulse /tmp/.X11-unix /tmp/runtime-root && \
