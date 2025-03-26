@@ -33,51 +33,6 @@ echo "Checking connectivity to SRS server..."
 ping -c 2 srs || echo "Cannot ping SRS server - network issue"
 
 # -----------------------
-# 1) Start Xvfb
-# -----------------------
-Xvfb :${DISPLAY_NUM} -screen 0 $RESOLUTION"x24" &
-XVFB_PID=$!
-echo "Started Xvfb with PID: $XVFB_PID"
-
-# -----------------------
-# 2) Start PulseAudio
-# -----------------------
-export XDG_RUNTIME_DIR=/tmp/runtime-root
-echo "Starting PulseAudio..."
-mkdir -p $XDG_RUNTIME_DIR
-chmod 700 $XDG_RUNTIME_DIR
-pulseaudio --system -D --exit-idle-time=-1 || { echo "Failed to start PulseAudio"; exit 1; }
-sleep 2  # Give PulseAudio time to start
-
-# Create a virtual audio device with error checking
-echo "Creating virtual audio devices..."
-pacmd list-sinks > /tmp/pulseaudio_debug_pre.log 2>&1
-pacmd load-module module-null-sink sink_name=virtual_speaker sink_properties=device.description=virtual_speaker > /tmp/pulse_sink.log 2>&1
-pacmd load-module module-virtual-source source_name=virtual_mic master=virtual_speaker.monitor source_properties=device.description=virtual_mic > /tmp/pulse_source.log 2>&1
-
-# Check and set default source with verification
-echo "Setting default audio source..."
-pacmd set-default-source virtual_mic
-pacmd list-sources > /tmp/pulseaudio_debug_post.log 2>&1
-pacmd info > /tmp/pulseaudio_info.log 2>&1
-
-# Add more delay to ensure PulseAudio is fully initialized
-sleep 5
-echo "Started PulseAudio"
-
-# -----------------------
-# 3) Construct the target URL
-# -----------------------
-if [[ "$TARGET_URL" == *"://"* ]]; then
-  FULL_TARGET_URL="$TARGET_URL"
-else
-  # Extract hostname from TARGET_URL if it's not a full URL
-  HOSTNAME=$(echo "$TARGET_URL" | cut -d'/' -f1 | cut -d':' -f1)
-  FULL_TARGET_URL="http://${HOSTNAME}:${TARGET_VNC_PORT}${TARGET_VNC_PATH}"
-  echo "Constructed target URL: $FULL_TARGET_URL"
-fi
-
-# -----------------------
 # Cleanup function
 # -----------------------
 cleanup() {
@@ -91,9 +46,10 @@ cleanup() {
         pkill -f Xvfb
         pkill -f ffmpeg
         pkill -f chromium
+        pkill -f pulseaudio
     else
         echo "Using kill for cleanup"
-        kill $(ps aux | grep -E 'Xvfb|ffmpeg|chromium' | grep -v grep | awk '{print $2}') 2>/dev/null || true
+        kill $(ps aux | grep -E 'Xvfb|ffmpeg|chromium|pulseaudio' | grep -v grep | awk '{print $2}') 2>/dev/null || true
     fi
     rm -f /tmp/.X${DISPLAY_NUM}-lock
     rm -f /tmp/.X11-unix/X${DISPLAY_NUM}
@@ -107,12 +63,68 @@ rm -f /tmp/.X${DISPLAY_NUM}-lock
 rm -f /tmp/.X11-unix/X${DISPLAY_NUM}
 
 # -----------------------
-# 4) Start Xvfb
+# 1) Start Xvfb
 # -----------------------
 echo "Starting Xvfb with resolution: $RESOLUTION..."
 Xvfb :${DISPLAY_NUM} -screen 0 $RESOLUTION"x24" &
 XVFB_PID=$!
+echo "Started Xvfb with PID: $XVFB_PID"
 sleep 2  # Give Xvfb time to start
+
+# -----------------------
+# 2) Start PulseAudio
+# -----------------------
+export XDG_RUNTIME_DIR=/tmp/runtime-root
+echo "Starting PulseAudio..."
+mkdir -p $XDG_RUNTIME_DIR
+chmod 700 $XDG_RUNTIME_DIR
+
+# Clean up any existing PulseAudio processes
+pkill -9 pulseaudio || true
+rm -rf /var/run/pulse /tmp/pulse-* ~/.config/pulse 2>/dev/null || true
+sleep 1
+
+# Start PulseAudio with proper system mode settings
+pulseaudio --system --disallow-exit --disallow-module-loading --daemonize --high-priority=true
+
+# Wait to ensure PulseAudio has time to initialize fully
+sleep 3
+
+# Check if PulseAudio is running
+if pulseaudio --check; then
+  echo "PulseAudio started successfully"
+else
+  echo "PulseAudio failed to start, attempting again with verbose logging..."
+  pulseaudio --system --disallow-exit --disallow-module-loading --daemonize --log-level=debug --high-priority=true
+  sleep 3
+fi
+
+# Create virtual audio devices
+echo "Creating virtual audio devices..."
+pactl load-module module-null-sink sink_name=virtual_speaker sink_properties=device.description=virtual_speaker
+pactl load-module module-virtual-source source_name=virtual_mic master=virtual_speaker.monitor source_properties=device.description=virtual_mic
+pactl set-default-source virtual_mic
+pactl set-default-sink virtual_speaker
+
+# Verify audio devices were created successfully
+pactl list short sources | grep virtual_mic
+pactl list short sinks | grep virtual_speaker
+
+# Add more delay to ensure PulseAudio is fully initialized
+sleep 2
+echo "PulseAudio configuration complete"
+
+# -----------------------
+# 3) Construct the target URL
+# -----------------------
+if [[ "$TARGET_URL" == *"://"* ]]; then
+  FULL_TARGET_URL="$TARGET_URL"
+else
+  # Extract hostname from TARGET_URL if it's not a full URL
+  HOSTNAME=$(echo "$TARGET_URL" | cut -d'/' -f1 | cut -d':' -f1)
+  FULL_TARGET_URL="http://${HOSTNAME}:${TARGET_VNC_PORT}${TARGET_VNC_PATH}"
+  echo "Constructed target URL: $FULL_TARGET_URL"
+fi
 
 # -----------------------
 # 5) Wait for VNC interface (if you rely on it)
@@ -156,14 +168,22 @@ echo "Starting PulseAudio health monitoring..."
   while true; do
     if ! pulseaudio --check; then
       echo "PulseAudio died, restarting..."
-      pulseaudio --system -D --exit-idle-time=-1
+      # Clean up any existing PulseAudio processes
+      pkill -9 pulseaudio || true
+      rm -rf /var/run/pulse /tmp/pulse-* 2>/dev/null || true
+      sleep 1
+      
+      # Restart with proper system mode settings
+      pulseaudio --system --disallow-exit --disallow-module-loading --daemonize --high-priority=true
+      sleep 3
+      
       # Recreate virtual devices
-      sleep 2
-      pacmd load-module module-null-sink sink_name=virtual_speaker sink_properties=device.description=virtual_speaker
-      pacmd load-module module-virtual-source source_name=virtual_mic master=virtual_speaker.monitor source_properties=device.description=virtual_mic
-      pacmd set-default-source virtual_mic
+      pactl load-module module-null-sink sink_name=virtual_speaker sink_properties=device.description=virtual_speaker
+      pactl load-module module-virtual-source source_name=virtual_mic master=virtual_speaker.monitor source_properties=device.description=virtual_mic
+      pactl set-default-source virtual_mic
+      pactl set-default-sink virtual_speaker
     fi
-    sleep 30
+    sleep 15
   done
 ) &
 PULSE_MONITOR_PID=$!
@@ -173,8 +193,8 @@ echo "Starting audio device status monitoring..."
 (
   while true; do
     echo "===== AUDIO STATUS $(date) =====" >> /tmp/audio_status.log
-    pacmd list-sinks >> /tmp/audio_status.log 2>&1
-    pacmd list-sources >> /tmp/audio_status.log 2>&1
+    pactl list sinks >> /tmp/audio_status.log 2>&1
+    pactl list sources >> /tmp/audio_status.log 2>&1
     sleep 60
   done
 ) &
@@ -197,27 +217,33 @@ while [ $FFMPEG_RETRY_COUNT -lt $MAX_FFMPEG_RETRIES ] && [ "$FFMPEG_SUCCESS" = f
     if nc -z -w5 srs 1935; then
         echo "RTMP server is available, starting stream..."
         
-        # First try with virtual_mic, if that fails fall back to no audio
-        if ffmpeg -f x11grab -framerate "$FPS" -s "$RESOLUTION" -i :${DISPLAY_NUM} \
-           -f pulse -i virtual_mic -f pulse -ac 2 \
-           -c:v libx264 -pix_fmt yuv420p -preset veryfast \
-           -b:v "$VIDEO_BITRATE" -maxrate "$VIDEO_BITRATE" -bufsize "$VIDEO_BITRATE" \
-           -c:a aac -b:a "$AUDIO_BITRATE" -ar 44100 \
-           -g 60 -keyint_min 60 -x264opts "keyint=60:min-keyint=60:no-scenecut" \
-           -f flv "$RTMP_URL"; then
+        # Check if PulseAudio is running properly
+        if pulseaudio --check && pactl list short sources | grep -q virtual_mic; then
+            echo "Using audio capture from virtual_mic"
+            # First try with virtual_mic
+            ffmpeg -f x11grab -framerate "$FPS" -s "$RESOLUTION" -i :${DISPLAY_NUM} \
+                -f pulse -i virtual_mic \
+                -c:v libx264 -pix_fmt yuv420p -preset veryfast \
+                -b:v "$VIDEO_BITRATE" -maxrate "$VIDEO_BITRATE" -bufsize "$VIDEO_BITRATE" \
+                -c:a aac -b:a "$AUDIO_BITRATE" -ar 44100 \
+                -g 60 -keyint_min 60 -x264opts "keyint=60:min-keyint=60:no-scenecut" \
+                -f flv "$RTMP_URL"
+        else
+            echo "PulseAudio not available, streaming without audio..."
+            # Fallback to video-only
+            ffmpeg -f x11grab -framerate "$FPS" -s "$RESOLUTION" -i :${DISPLAY_NUM} \
+                -c:v libx264 -pix_fmt yuv420p -preset veryfast \
+                -b:v "$VIDEO_BITRATE" -maxrate "$VIDEO_BITRATE" -bufsize "$VIDEO_BITRATE" \
+                -g 60 -keyint_min 60 -x264opts "keyint=60:min-keyint=60:no-scenecut" \
+                -f flv "$RTMP_URL"
+        fi
+        
+        if [ $? -eq 0 ]; then
             FFMPEG_SUCCESS=true
         else
-            echo "Failed with virtual_mic, trying without audio..."
-            # Fallback to video-only if audio fails
-            ffmpeg -f x11grab -framerate "$FPS" -s "$RESOLUTION" -i :${DISPLAY_NUM} \
-              -c:v libx264 -pix_fmt yuv420p -preset veryfast \
-              -b:v "$VIDEO_BITRATE" -maxrate "$VIDEO_BITRATE" -bufsize "$VIDEO_BITRATE" \
-              -g 60 -keyint_min 60 -x264opts "keyint=60:min-keyint=60:no-scenecut" \
-              -f flv "$RTMP_URL"
-              
-            if [ $? -eq 0 ]; then
-                FFMPEG_SUCCESS=true
-            fi
+            echo "FFmpeg stream failed, retrying..."
+            FFMPEG_RETRY_COUNT=$((FFMPEG_RETRY_COUNT+1))
+            sleep 5
         fi
     else
         FFMPEG_RETRY_COUNT=$((FFMPEG_RETRY_COUNT+1))
