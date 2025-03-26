@@ -7,6 +7,7 @@ import { openai } from '@ai-sdk/openai';
 import type { ToolSet } from 'ai';
 import { generateObject } from 'ai';
 import { z } from 'zod';
+import { swapTokensUniswapV3 } from './uniswap-tool';
 
 export const getToolsGroup = async (
   group: string,
@@ -16,6 +17,7 @@ export const getToolsGroup = async (
     case 'crypto': {
       const goatTools = await getGoatTools();
       const agentkitTools = await getAgentkitTools();
+      const uniswapTools = [swapTokensUniswapV3];
       // Convert to ToolSet to fix type compatibility issues
       const combinedTools: ToolSet = {};
 
@@ -26,6 +28,11 @@ export const getToolsGroup = async (
 
       // Add tools from agentkitTools
       for (const [key, tool] of Object.entries(agentkitTools)) {
+        combinedTools[key] = tool as any;
+      }
+
+      // Add tools from uniswapTools
+      for (const [key, tool] of Object.entries(uniswapTools)) {
         combinedTools[key] = tool as any;
       }
 

@@ -1,15 +1,10 @@
 import {
   AgentKit,
   ViemWalletProvider,
-  compoundActionProvider,
-  defillamaActionProvider,
   erc20ActionProvider,
   erc721ActionProvider,
-  jupiterActionProvider,
-  pythActionProvider,
   walletActionProvider,
-  wethActionProvider,
-  wowActionProvider,
+  wethActionProvider
 } from '@coinbase/agentkit';
 import { getVercelAITools } from '@coinbase/agentkit-vercel-ai-sdk';
 import walletClient from '../wallet';
@@ -21,13 +16,13 @@ export const getTools = async () => {
     walletProvider,
     actionProviders: [
       walletActionProvider(),
-      wowActionProvider(),
+      // wowActionProvider(),
       wethActionProvider(),
-      pythActionProvider(),
+      // pythActionProvider(),
       //  openseaActionProvider(), // Requires API key
-      compoundActionProvider(),
-      jupiterActionProvider(),
-      defillamaActionProvider(),
+      // compoundActionProvider(),
+      // jupiterActionProvider(),
+      // defillamaActionProvider(),
       erc20ActionProvider(),
       erc721ActionProvider(),
     ],
