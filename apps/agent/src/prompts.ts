@@ -16,8 +16,9 @@ export const COMPUTER_USE_SYSTEM_PROMPT = `<SYSTEM_CAPABILITY>
 * If GUI applications are slow to respond, be patient as this is expected in a containerized VNC environment.
 * Use lightweight alternatives where possible (e.g., prefer text editors like nano or vim over full IDEs).
 * Be aware of container limitations - avoid extremely resource-intensive operations that might cause the container to become unresponsive.
-* For web browsing, note that some sites may detect you're in an unusual environment and present CAPTCHAs or other verification steps.
+* For web browsing, note that some sites may detect you're in an unusual environment and present CAPTCHAs or other verification steps. Always solve these CAPTCHAs autonomously without asking for user assistance.
 * Always clean up temporary files when finished to preserve disk space in the container.
+* Never ask for user input during task execution - operate completely autonomously from start to finish.
 </IMPORTANT>
 
 <ENVIRONMENT_SPECIFICS>

@@ -8,6 +8,7 @@ function LofiPlayer() {
   const [volume, setVolume] = useState(0.1);
   const [autoSwitch, setAutoSwitch] = useState(true);
   const [isInitializing, setIsInitializing] = useState(false);
+  const [failedAttempts, setFailedAttempts] = useState<Set<number>>(new Set());
   const audioRef = useRef<HTMLAudioElement>(null);
   const silenceTimeoutRef = useRef<number | null>(null);
   const errorTimeoutRef = useRef<number | null>(null);
@@ -17,7 +18,7 @@ function LofiPlayer() {
   const rafIdRef = useRef<number | null>(null);
   const isPlayingAudioRef = useRef<boolean>(false);
   
-  // Free lofi tracks from various sources
+  // Free lofi tracks from various sources (updated with more reliable streams)
   const lofiTracks = [
     {
       name: "LoFi Radio",
@@ -36,14 +37,38 @@ function LofiPlayer() {
       url: "https://stream.nightride.fm/nightride.m4a"
     },
     {
-      name: "Coffee Shop Vibes",
+      name: "Lofi Girl",
+      url: "https://play.streamafrica.net/lofiradio"
+    },
+    {
+      name: "Coffee Shop",
       url: "https://streams.fluxfm.de/Chillout/mp3-320/streams.fluxfm.de/"
     },
     {
       name: "Study Beats",
       url: "https://stream.zeno.fm/0r0xa792kwzuv"
+    },
+    {
+      name: "Ambient",
+      url: "https://streaming.radio.co/s5c5da6a36/listen"
     }
   ];
+
+  // Find next available track that hasn't failed recently
+  const findNextTrack = () => {
+    if (failedAttempts.size >= lofiTracks.length) {
+      // All tracks have failed, reset failed attempts and try again
+      setFailedAttempts(new Set());
+      return (currentTrack + 1) % lofiTracks.length;
+    }
+    
+    let nextTrack = currentTrack;
+    do {
+      nextTrack = (nextTrack + 1) % lofiTracks.length;
+    } while (failedAttempts.has(nextTrack) && nextTrack !== currentTrack);
+    
+    return nextTrack;
+  };
 
   // Switch to next track
   const handleNextTrack = () => {
@@ -55,8 +80,17 @@ function LofiPlayer() {
         window.clearTimeout(silenceTimeoutRef.current);
         silenceTimeoutRef.current = null;
       }
+      
+      // Mark current track as failed
+      const newFailedAttempts = new Set(failedAttempts);
+      newFailedAttempts.add(currentTrack);
+      setFailedAttempts(newFailedAttempts);
+      
       setIsInitializing(true);
-      setCurrentTrack((currentTrack + 1) % lofiTracks.length);
+      const nextTrack = findNextTrack();
+      setCurrentTrack(nextTrack);
+      
+      console.log(`Switching to track: ${lofiTracks[nextTrack].name}`);
     }
   };
 
@@ -65,12 +99,26 @@ function LofiPlayer() {
     if (audioRef.current) {
       if (isPlaying && hasInteracted) {
         setIsInitializing(true);
-        audioRef.current.play().catch(error => {
-          console.error("Error playing audio:", error);
-          setIsPlaying(false);
-        }).finally(() => {
+        
+        const playPromise = audioRef.current.play();
+        
+        if (playPromise !== undefined) {
+          playPromise.catch(error => {
+            console.error("Error playing audio:", error);
+            setIsPlaying(false);
+            
+            // If we get a specific error that suggests stream is invalid, switch tracks
+            if (error.name === 'NotSupportedError' || error.name === 'NotAllowedError') {
+              console.log("Stream not supported or allowed, switching tracks...");
+              handleNextTrack();
+            }
+          }).finally(() => {
+            setTimeout(() => setIsInitializing(false), 3000);
+          });
+        } else {
+          // For browsers that don't return a promise
           setTimeout(() => setIsInitializing(false), 3000);
-        });
+        }
       } else {
         audioRef.current.pause();
         isPlayingAudioRef.current = false;
@@ -93,7 +141,8 @@ function LofiPlayer() {
       switchInterval = window.setInterval(() => {
         if (isPlayingAudioRef.current) {
           // Only auto-switch if we're actually playing audio
-          setCurrentTrack((prev) => (prev + 1) % lofiTracks.length);
+          const nextTrack = findNextTrack();
+          setCurrentTrack(nextTrack);
         }
       }, 1200000); // 20 minutes = 1,200,000 milliseconds
     }
@@ -101,26 +150,30 @@ function LofiPlayer() {
     return () => {
       if (switchInterval) window.clearInterval(switchInterval);
     };
-  }, [autoSwitch, isPlaying, hasInteracted, lofiTracks.length]);
+  }, [autoSwitch, isPlaying, hasInteracted, lofiTracks.length, failedAttempts]);
 
   // Cleanup audio context resources
   const cleanupAudioContext = () => {
-    if (rafIdRef.current) {
-      cancelAnimationFrame(rafIdRef.current);
-      rafIdRef.current = null;
-    }
-    
-    // Close and cleanup audio context
-    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-      try {
-        audioContextRef.current.close();
-      } catch (err) {
-        console.error("Error closing audio context:", err);
+    try {
+      if (rafIdRef.current) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
       }
+      
+      // Close and cleanup audio context
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        try {
+          audioContextRef.current.close();
+        } catch (err) {
+          console.error("Error closing audio context:", err);
+        }
+      }
+      
+      audioContextRef.current = null;
+      audioAnalyserRef.current = null;
+    } catch (err) {
+      console.error("Error in cleanup:", err);
     }
-    
-    audioContextRef.current = null;
-    audioAnalyserRef.current = null;
   };
 
   // Error handling and audio detection
@@ -130,8 +183,9 @@ function LofiPlayer() {
     const audio = audioRef.current;
     
     // Handle stream loading errors
-    const handleError = () => {
-      console.error("Stream error detected, switching tracks");
+    const handleError = (e: Event) => {
+      console.error("Stream error detected, switching tracks", e);
+      
       // Clear any existing timeout
       if (errorTimeoutRef.current) window.clearTimeout(errorTimeoutRef.current);
       
@@ -139,7 +193,7 @@ function LofiPlayer() {
       errorTimeoutRef.current = window.setTimeout(() => {
         isPlayingAudioRef.current = false;
         handleNextTrack();
-      }, 3000);
+      }, 2000);
     };
     
     // Handle stalled stream (when playback stops unexpectedly)
@@ -175,6 +229,13 @@ function LofiPlayer() {
       // Clear initialization state
       setIsInitializing(false);
       
+      // Reset failed attempts for this track since it's now playing
+      if (failedAttempts.has(currentTrack)) {
+        const newFailedAttempts = new Set(failedAttempts);
+        newFailedAttempts.delete(currentTrack);
+        setFailedAttempts(newFailedAttempts);
+      }
+      
       // Start silence detection, but only after a delay to give the stream time to stabilize
       if (silenceTimeoutRef.current) {
         window.clearTimeout(silenceTimeoutRef.current);
@@ -203,56 +264,92 @@ function LofiPlayer() {
         console.log("Starting silence detection");
         
         // Create new audio context for analyzing audio
-        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-        audioAnalyserRef.current = audioContextRef.current.createAnalyser();
-        const source = audioContextRef.current.createMediaElementSource(audioRef.current);
-        
-        source.connect(audioAnalyserRef.current);
-        audioAnalyserRef.current.connect(audioContextRef.current.destination);
-        
-        audioAnalyserRef.current.fftSize = 256;
-        const bufferLength = audioAnalyserRef.current.frequencyBinCount;
-        const dataArray = new Uint8Array(bufferLength);
-        
-        // Check for audio data
-        let silenceCounter = 0;
-        const MAX_SILENCE_COUNT = 10; // Increase the threshold to reduce false positives
-        
-        const checkAudio = () => {
-          if (!audioRef.current || !isPlaying || !audioAnalyserRef.current) return;
+        try {
+          audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+          audioAnalyserRef.current = audioContextRef.current.createAnalyser();
+          const source = audioContextRef.current.createMediaElementSource(audioRef.current);
           
-          audioAnalyserRef.current.getByteFrequencyData(dataArray);
+          source.connect(audioAnalyserRef.current);
+          audioAnalyserRef.current.connect(audioContextRef.current.destination);
           
-          // Calculate average volume
-          let sum = 0;
-          for (let i = 0; i < bufferLength; i++) {
-            sum += dataArray[i];
-          }
-          const average = sum / bufferLength;
+          audioAnalyserRef.current.fftSize = 256;
+          const bufferLength = audioAnalyserRef.current.frequencyBinCount;
+          const dataArray = new Uint8Array(bufferLength);
           
-          // If average is very low, consider it silence
-          if (average < 3) { // Lower threshold to be more conservative
-            silenceCounter++;
-            if (silenceCounter >= MAX_SILENCE_COUNT && !isInitializing) {
-              console.log("Audio silence detected, switching tracks");
-              isPlayingAudioRef.current = false;
-              handleNextTrack();
-              return; // Exit the animation frame loop
+          // Check for audio data
+          let silenceCounter = 0;
+          const MAX_SILENCE_COUNT = 10; // Increase the threshold to reduce false positives
+          
+          const checkAudio = () => {
+            if (!audioRef.current || !isPlaying || !audioAnalyserRef.current) return;
+            
+            try {
+              audioAnalyserRef.current.getByteFrequencyData(dataArray);
+              
+              // Calculate average volume
+              let sum = 0;
+              for (let i = 0; i < bufferLength; i++) {
+                sum += dataArray[i];
+              }
+              const average = sum / bufferLength;
+              
+              // If average is very low, consider it silence
+              if (average < 3) { // Lower threshold to be more conservative
+                silenceCounter++;
+                if (silenceCounter >= MAX_SILENCE_COUNT && !isInitializing) {
+                  console.log("Audio silence detected, switching tracks");
+                  isPlayingAudioRef.current = false;
+                  handleNextTrack();
+                  return; // Exit the animation frame loop
+                }
+              } else {
+                silenceCounter = 0; // Reset counter if we detect audio
+              }
+              
+              // Schedule next check
+              rafIdRef.current = requestAnimationFrame(checkAudio);
+            } catch (err) {
+              console.error("Error in audio analysis loop:", err);
+              cleanupAudioContext();
             }
-          } else {
-            silenceCounter = 0; // Reset counter if we detect audio
-          }
+          };
           
-          // Schedule next check
+          // Start the animation frame loop
           rafIdRef.current = requestAnimationFrame(checkAudio);
-        };
-        
-        // Start the animation frame loop
-        rafIdRef.current = requestAnimationFrame(checkAudio);
+        } catch (err) {
+          console.error("Error setting up Web Audio API (may be unsupported):", err);
+          // If Web Audio API fails, set up a simpler fallback detection
+          setupFallbackSilenceDetection();
+        }
       } catch (err) {
         console.error("Error setting up audio analysis:", err);
         cleanupAudioContext(); // Clean up if we hit an error
+        setupFallbackSilenceDetection();
       }
+    };
+    
+    // Fallback silence detection using simpler methods
+    const setupFallbackSilenceDetection = () => {
+      console.log("Using fallback silence detection");
+      const checkInterval = window.setInterval(() => {
+        if (!audioRef.current || !isPlaying) {
+          window.clearInterval(checkInterval);
+          return;
+        }
+        
+        // Check if currentTime is advancing
+        const currentTime = audioRef.current.currentTime;
+        
+        window.setTimeout(() => {
+          if (audioRef.current && Math.abs(audioRef.current.currentTime - currentTime) < 0.1) {
+            console.log("Audio appears to be stalled (currentTime not advancing)");
+            handleNextTrack();
+          }
+        }, 3000);
+      }, 10000); // Check every 10 seconds
+      
+      // Clean up interval on component unmount
+      return () => window.clearInterval(checkInterval);
     };
     
     // Setup event listeners
@@ -263,6 +360,12 @@ function LofiPlayer() {
     audio.addEventListener('suspend', handleStalled);
     audio.addEventListener('ended', handleEnded);
     
+    // Add a canplay handler to make sure we're actually getting data
+    const handleCanPlay = () => {
+      console.log("Stream can play now");
+    };
+    audio.addEventListener('canplay', handleCanPlay);
+    
     return () => {
       audio.removeEventListener('error', handleError);
       audio.removeEventListener('playing', handlePlaying);
@@ -270,6 +373,7 @@ function LofiPlayer() {
       audio.removeEventListener('waiting', handleStalled);
       audio.removeEventListener('suspend', handleStalled);
       audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener('canplay', handleCanPlay);
       
       // Clear all timeouts
       if (silenceTimeoutRef.current) window.clearTimeout(silenceTimeoutRef.current);
@@ -279,7 +383,7 @@ function LofiPlayer() {
       // Clean up audio context
       cleanupAudioContext();
     };
-  }, [currentTrack, isPlaying, hasInteracted, isInitializing]);
+  }, [currentTrack, isPlaying, hasInteracted, isInitializing, failedAttempts]);
 
   // Animation effect for visualizer
   useEffect(() => {
@@ -318,7 +422,11 @@ function LofiPlayer() {
         setHasInteracted(true);
         // Try to play on first interaction
         if (audioRef.current) {
-          audioRef.current.play().catch(e => console.error("Error playing on interaction:", e));
+          audioRef.current.play().catch(e => {
+            console.error("Error playing on interaction:", e);
+            // Try a different track if this one fails on interaction
+            handleNextTrack();
+          });
         }
       }
       
@@ -339,6 +447,34 @@ function LofiPlayer() {
     };
   }, [hasInteracted]);
 
+  // Reload track if it's been silent for too long
+  useEffect(() => {
+    const checkInterval = window.setInterval(() => {
+      if (audioRef.current && isPlaying && hasInteracted && !isInitializing) {
+        if (!isPlayingAudioRef.current) {
+          console.log("Player seems stuck in non-playing state, reloading current track");
+          // Force reload the audio element
+          const currentSrc = audioRef.current.src;
+          audioRef.current.src = '';
+          
+          // Small delay before setting source again
+          window.setTimeout(() => {
+            if (audioRef.current) {
+              audioRef.current.src = currentSrc;
+              audioRef.current.load();
+              audioRef.current.play().catch(e => {
+                console.error("Error reloading track:", e);
+                handleNextTrack();
+              });
+            }
+          }, 500);
+        }
+      }
+    }, 30000); // Check every 30 seconds
+    
+    return () => window.clearInterval(checkInterval);
+  }, [isPlaying, hasInteracted, isInitializing]);
+
   // Cleanup on component unmount
   useEffect(() => {
     return () => {
@@ -347,10 +483,19 @@ function LofiPlayer() {
     };
   }, []);
 
+  // Manual track change function
+  const changeTrack = () => {
+    // Manually trigger track change
+    handleNextTrack();
+  };
+
   return (
     <div 
       className="overlay-element lofi-player max-w-24" 
-      onClick={hasInteracted ? undefined : () => {
+      onClick={hasInteracted ? () => {
+        // If already interacted, toggle play/pause
+        setIsPlaying(!isPlaying);
+      } : () => {
         setHasInteracted(true);
         setIsPlaying(true);
       }}
@@ -358,7 +503,10 @@ function LofiPlayer() {
       <div className="flex flex-col p-3 h-full justify-center items-center">        
         {/* Track name */}
         <div className="text-center mb-3">
-          <span className="text-sm text-white">{lofiTracks[currentTrack].name}</span>
+          <span className="text-sm text-white cursor-pointer" onClick={(e) => {
+            e.stopPropagation(); // Prevent parent click handler
+            changeTrack();
+          }}>{lofiTracks[currentTrack].name}</span>
           <div className="mt-1 w-24 mx-auto">
             <div className="h-1 bg-gray-700 rounded-full overflow-hidden">
               <div 
@@ -395,6 +543,8 @@ function LofiPlayer() {
         loop={false}
         autoPlay={isPlaying && hasInteracted}
         muted={false}
+        crossOrigin="anonymous"
+        preload="auto"
       />
     </div>
   );
