@@ -43,14 +43,6 @@ function LofiPlayer() {
     {
       name: "Coffee Shop",
       url: "https://streams.fluxfm.de/Chillout/mp3-320/streams.fluxfm.de/"
-    },
-    {
-      name: "Study Beats",
-      url: "https://stream.zeno.fm/0r0xa792kwzuv"
-    },
-    {
-      name: "Ambient",
-      url: "https://streaming.radio.co/s5c5da6a36/listen"
     }
   ];
 
