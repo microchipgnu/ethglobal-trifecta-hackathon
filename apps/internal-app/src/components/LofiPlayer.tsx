@@ -21,25 +21,25 @@ function LofiPlayer() {
   // Free lofi tracks from various sources (updated with more reliable streams)
   const lofiTracks = [
     {
-      name: "LoFi Radio",
-      url: "https://play.streamafrica.net/lofiradio"
-    },
-    {
-      name: "Chillhop",
-      url: "https://streams.fluxfm.de/chillhop/mp3-320/streams.fluxfm.de/"
-    },
-    {
-      name: "Box Lofi",
-      url: "https://boxradio-edge-08.streamafrica.net/lofi"
-    },
-    {
       name: "Synthwave",
       url: "https://stream.nightride.fm/nightride.m4a"
     },
-    {
-      name: "Coffee Shop",
-      url: "https://streams.fluxfm.de/Chillout/mp3-320/streams.fluxfm.de/"
-    }
+    // {
+    //   name: "LoFi Radio",
+    //   url: "https://play.streamafrica.net/lofiradio"
+    // },
+    // {
+    //   name: "Chillhop",
+    //   url: "https://streams.fluxfm.de/chillhop/mp3-320/streams.fluxfm.de/"
+    // },
+    // {
+    //   name: "Box Lofi",
+    //   url: "https://boxradio-edge-08.streamafrica.net/lofi"
+    // },
+    // {
+    //   name: "Coffee Shop",
+    //   url: "https://streams.fluxfm.de/Chillout/mp3-320/streams.fluxfm.de/"
+    // }
   ];
 
   // Find next available track that hasn't failed recently
