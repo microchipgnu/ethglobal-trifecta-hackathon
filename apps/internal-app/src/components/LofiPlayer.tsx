@@ -37,10 +37,6 @@ function LofiPlayer() {
       url: "https://stream.nightride.fm/nightride.m4a"
     },
     {
-      name: "Lofi Girl",
-      url: "https://play.streamafrica.net/lofiradio"
-    },
-    {
       name: "Coffee Shop",
       url: "https://streams.fluxfm.de/Chillout/mp3-320/streams.fluxfm.de/"
     }

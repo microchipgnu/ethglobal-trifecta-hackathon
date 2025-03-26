@@ -78,6 +78,10 @@ fi
 # -----------------------
 cleanup() {
     echo "Cleaning up processes..."
+    # Kill our monitoring processes if they exist
+    [ -n "$PULSE_MONITOR_PID" ] && kill $PULSE_MONITOR_PID 2>/dev/null || true
+    [ -n "$AUDIO_MONITOR_PID" ] && kill $AUDIO_MONITOR_PID 2>/dev/null || true
+    
     command -v pkill >/dev/null 2>&1 || echo "pkill command not found, skipping pkill"
     if command -v pkill >/dev/null 2>&1; then
         pkill -f Xvfb
@@ -141,6 +145,36 @@ if [ "$SUCCESS" = false ]; then
     echo "Failed to connect to VNC server at $TARGET_HOST:$TARGET_PORT after $MAX_RETRIES attempts"
     exit 1
 fi
+
+# Monitor PulseAudio health and restart if needed
+echo "Starting PulseAudio health monitoring..."
+(
+  while true; do
+    if ! pulseaudio --check; then
+      echo "PulseAudio died, restarting..."
+      pulseaudio -D --exit-idle-time=-1
+      # Recreate virtual devices
+      sleep 2
+      pacmd load-module module-null-sink sink_name=virtual_speaker sink_properties=device.description=virtual_speaker
+      pacmd load-module module-virtual-source source_name=virtual_mic master=virtual_speaker.monitor source_properties=device.description=virtual_mic
+      pacmd set-default-source virtual_mic
+    fi
+    sleep 30
+  done
+) &
+PULSE_MONITOR_PID=$!
+
+# Add audio device status logging
+echo "Starting audio device status monitoring..."
+(
+  while true; do
+    echo "===== AUDIO STATUS $(date) =====" >> /tmp/audio_status.log
+    pacmd list-sinks >> /tmp/audio_status.log 2>&1
+    pacmd list-sources >> /tmp/audio_status.log 2>&1
+    sleep 60
+  done
+) &
+AUDIO_MONITOR_PID=$!
 
 # -----------------------
 # 6) Start FFmpeg to RTMP
