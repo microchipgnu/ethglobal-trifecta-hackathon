@@ -17,6 +17,9 @@ const MIN_BACKOFF_MS = 3000; // Start with 3 seconds
 const MAX_BACKOFF_MS = 60000; // Max 1 minute
 const BACKOFF_FACTOR = 1.5; // Exponential factor
 
+// Task timeout configuration (3 minutes)
+const TASK_TIMEOUT_MS = 3 * 60 * 1000;
+
 export const processTask = async () => {
   try {
     // First check for any IN_PROGRESS tasks
@@ -33,6 +36,23 @@ export const processTask = async () => {
         return false;
       }
       console.log(`Continuing in-progress task: ${task.id} ${task.prompt}`);
+
+      // Check if task has been running for too long
+      if (task.startedAt) {
+        const startTime = new Date(task.startedAt).getTime();
+        const currentTime = new Date().getTime();
+        const elapsedTime = currentTime - startTime;
+
+        if (elapsedTime > TASK_TIMEOUT_MS) {
+          console.log(`Task ${task.id} has exceeded timeout (${TASK_TIMEOUT_MS / 1000} seconds). Marking as failed.`);
+          await tasksClient.updateTaskStatus(
+            task.id,
+            TaskStatus.FAILED,
+            "Task timed out after 3 minutes"
+          );
+          return true;
+        }
+      }
 
       // Execute the task
       const response = await executePrompt(task.prompt, {
@@ -57,6 +77,7 @@ export const processTask = async () => {
     const pendingTasks = await tasksClient.getAllTasks({
       status: TaskStatus.PENDING,
       limit: 1,
+      order: 'asc',
     });
 
     if (pendingTasks.length === 0) {
@@ -80,23 +101,47 @@ export const processTask = async () => {
     );
     console.log('Task updated to IN_PROGRESS');
 
-    // Execute the task
-    const response = await executePrompt(task.prompt, {
-      host: 'computer',
-      port: 5900,
+    // Create a timeout promise that will reject after TASK_TIMEOUT_MS
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => {
+        reject(new Error(`Task execution timed out after ${TASK_TIMEOUT_MS / 1000} seconds`));
+      }, TASK_TIMEOUT_MS);
     });
 
-    // Update task with results
-    await tasksClient.updateTaskStatus(
-      task.id,
-      TaskStatus.COMPLETED,
-      typeof response.text === 'string'
-        ? response.text
-        : JSON.stringify(response)
-    );
+    try {
+      // Race the task execution against the timeout
+      const response = await Promise.race([
+        executePrompt(task.prompt, {
+          host: 'computer',
+          port: 5900,
+        }),
+        timeoutPromise
+      ]);
 
-    console.log(`Task ${task.id} completed successfully`);
-    return true;
+      // Update task with results
+      await tasksClient.updateTaskStatus(
+        task.id,
+        TaskStatus.COMPLETED,
+        typeof response.text === 'string'
+          ? response.text
+          : JSON.stringify(response)
+      );
+
+      console.log(`Task ${task.id} completed successfully`);
+      return true;
+    } catch (error) {
+      console.error(`Task execution failed or timed out: ${error.message}`);
+      
+      // Update task as failed
+      await tasksClient.updateTaskStatus(
+        task.id,
+        TaskStatus.FAILED,
+        `Task execution failed: ${error.message}`
+      );
+      
+      console.log(`Task ${task.id} marked as FAILED due to timeout or error`);
+      return true;
+    }
   } catch (error) {
     console.error('Error in task execution:', error);
     return false;
